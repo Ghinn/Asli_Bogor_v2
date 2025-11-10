@@ -123,7 +123,7 @@ export function Footer() {
               <li className="flex items-center gap-3">
                 <Phone size={20} style={{ color: '#FFB84D' }} className="flex-shrink-0" />
                 <span className="body-3" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                  +62 853 8937 1126
+                  +62-853-8937-1126
                 </span>
               </li>
               <li className="flex items-center gap-3">
