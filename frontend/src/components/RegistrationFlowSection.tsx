@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "./ui/button";
-import { Store, Bike, FileText, ShoppingBag, CreditCard, TrendingUp, CheckCircle, MapPin } from "lucide-react";
+import { Store, Bike, FileText, ShoppingBag, TrendingUp, CheckCircle, MapPin } from "lucide-react";
 
 export function RegistrationFlowSection() {
   const [activeTab, setActiveTab] = useState<"umkm" | "driver">("umkm");

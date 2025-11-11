@@ -8,6 +8,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 import { Truck, ArrowLeft } from 'lucide-react';
 
+import { AsliBogorLogo } from '../ui/asli-bogor-logo';
+
 interface DriverRegisterPageProps {
   onSwitchToLogin: () => void;
   onBack: () => void;
@@ -36,6 +38,7 @@ export function DriverRegisterPage({ onSwitchToLogin, onBack }: DriverRegisterPa
       await register(name, email, password, 'driver');
       toast.success('Registrasi berhasil! Selamat datang Driver.');
     } catch (error) {
+      console.error('Driver registration error:', error);
       toast.error('Registrasi gagal. Silakan coba lagi.');
     } finally {
       setIsLoading(false);
@@ -71,6 +74,10 @@ export function DriverRegisterPage({ onSwitchToLogin, onBack }: DriverRegisterPa
           <Card className="bg-white shadow-2xl">
             <CardContent className="p-8">
               <div className="flex flex-col items-center mb-6">
+                <AsliBogorLogo
+                  variant="primary"
+                  className="h-12 w-auto mb-4"
+                />
                 <motion.div
                   className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mb-4"
                   whileHover={{ scale: 1.1, rotate: 5 }}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Badge } from '../../ui/badge';
-import { Package, MapPin, Check, Bike, Store, User } from 'lucide-react';
+import { Package, MapPin, Check, Bike, Store } from 'lucide-react';
 
 interface Order {
   id: string;

@@ -9,6 +9,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 import { Store, ArrowLeft } from 'lucide-react';
 
+import { AsliBogorLogo } from '../ui/asli-bogor-logo';
+
 interface UMKMRegisterPageProps {
   onSwitchToLogin: () => void;
   onBack: () => void;
@@ -38,6 +40,7 @@ export function UMKMRegisterPage({ onSwitchToLogin, onBack }: UMKMRegisterPagePr
       await register(businessName, email, password, 'umkm');
       toast.success('Registrasi berhasil! Selamat datang di Asli Bogor.');
     } catch (error) {
+      console.error('UMKM registration error:', error);
       toast.error('Registrasi gagal. Silakan coba lagi.');
     } finally {
       setIsLoading(false);
@@ -73,6 +76,10 @@ export function UMKMRegisterPage({ onSwitchToLogin, onBack }: UMKMRegisterPagePr
           <Card className="bg-white shadow-2xl">
             <CardContent className="p-8">
               <div className="flex flex-col items-center mb-6">
+                <AsliBogorLogo
+                  variant="primary"
+                  className="h-12 w-auto mb-4"
+                />
                 <motion.div
                   className="w-20 h-20 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center mb-4"
                   whileHover={{ scale: 1.1, rotate: 5 }}

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { CloudRain, AlertCircle, Umbrella, X } from 'lucide-react';
+import { CloudRain, Umbrella, X } from 'lucide-react';
 import { useWeather } from '../contexts/WeatherContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';

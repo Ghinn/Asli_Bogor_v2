@@ -1,16 +1,21 @@
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Store, Users, Bike, DollarSign, Package, TrendingUp, MapPin, Award, Activity } from 'lucide-react';
 import { AnimatedCounter } from '../../AnimatedCounter';
 import { Badge } from '../../ui/badge';
 import { ExportButton } from '../ExportButton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '../../ui/tabs';
 import { useState } from 'react';
-import { Progress } from '../../ui/progress';
 
 export function AdminAnalyticsPage() {
   const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
+
+  const handlePeriodChange = (value: string) => {
+    if (value === 'daily' || value === 'weekly' || value === 'monthly' || value === 'yearly') {
+      setPeriod(value);
+    }
+  };
 
   const platformStats = [
     {
@@ -250,7 +255,7 @@ export function AdminAnalyticsPage() {
             <CardTitle style={{ color: '#2F4858' }}>
               Tren Transaksi Platform
             </CardTitle>
-            <Tabs value={period} onValueChange={(v) => setPeriod(v as any)}>
+            <Tabs value={period} onValueChange={handlePeriodChange}>
               <TabsList>
                 <TabsTrigger value="daily">Harian</TabsTrigger>
                 <TabsTrigger value="weekly">Mingguan</TabsTrigger>

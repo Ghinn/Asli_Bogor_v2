@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Package, Truck, CloudRain, CheckCircle, Clock, X } from 'lucide-react';
+import { Bell, Package, Truck, CloudRain, CheckCircle, Clock } from 'lucide-react';
 import { useNotifications } from '../contexts/NotificationContext';
 import type { Notification } from '../contexts/NotificationContext';
 

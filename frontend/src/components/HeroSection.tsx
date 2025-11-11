@@ -1,6 +1,8 @@
 import { Button } from "./ui/button";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 
+import { AsliBogorLogo } from "./ui/asli-bogor-logo";
+
 export function HeroSection() {
   const scrollToDirectory = () => {
     const element = document.getElementById('direktori');
@@ -15,7 +17,12 @@ export function HeroSection() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left: Text Content */}
           <div className="space-y-6">
-            <h1 style={{ color: '#2F4858' }}>Asli Bogor</h1>
+            <div className="flex items-center">
+              <AsliBogorLogo
+                variant="primary"
+                className="h-24 w-auto drop-shadow-xl"
+              />
+            </div>
             <h4 style={{ color: '#4A4A4A' }}>
               UMKM Naik Kelas, Bogor Makin Berkualitas.
             </h4>

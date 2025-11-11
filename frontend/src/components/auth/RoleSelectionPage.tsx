@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { User, Store, Truck, ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "../ui/card";
 
+import { AsliBogorLogo } from "../ui/asli-bogor-logo";
+
 interface RoleSelectionPageProps {
   onSelectRole: (role: 'user' | 'umkm' | 'driver') => void;
   onClose: () => void;
@@ -68,6 +70,12 @@ export function RoleSelectionPage({ onSelectRole, onClose }: RoleSelectionPagePr
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
+          <div className="flex justify-center mb-6">
+            <AsliBogorLogo
+              variant="primary"
+              className="h-14 w-auto drop-shadow-lg"
+            />
+          </div>
           <h1 style={{ color: '#2F4858' }}>Pilih Role Anda</h1>
           <p className="mt-4" style={{ color: '#4A4A4A', fontSize: '18px' }}>
             Silakan pilih kategori yang sesuai dengan kebutuhan Anda

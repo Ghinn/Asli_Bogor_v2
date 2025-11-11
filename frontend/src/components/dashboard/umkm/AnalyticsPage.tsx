@@ -12,6 +12,12 @@ import { useState } from 'react';
 export function UMKMAnalyticsPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'customers' | 'stock'>('overview');
 
+  const handleTabChange = (value: string) => {
+    if (value === 'overview' || value === 'customers' || value === 'stock') {
+      setActiveTab(value);
+    }
+  };
+
   const stats = [
     { 
       label: 'Total Revenue', 
@@ -88,7 +94,7 @@ export function UMKMAnalyticsPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="customers">Analisis Pelanggan</TabsTrigger>

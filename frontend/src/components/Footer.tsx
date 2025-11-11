@@ -1,6 +1,8 @@
 import { Facebook, Instagram, Twitter, Mail, Phone, MapPin, Leaf } from "lucide-react";
 import { motion } from "framer-motion";
 
+import { AsliBogorLogo } from "./ui/asli-bogor-logo";
+
 export function Footer() {
   return (
     <footer 
@@ -24,11 +26,12 @@ export function Footer() {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #FF8D28 0%, #FFB84D 100%)' }}>
-                <span className="body-3" style={{ color: '#FFFFFF', fontWeight: 600 }}>AB</span>
-              </div>
-              <span className="body-3" style={{ color: '#FFFFFF', fontWeight: 600 }}>Asli Bogor</span>
+            <div className="flex items-center mb-4">
+              <AsliBogorLogo
+                variant="secondary"
+                className="h-12 w-auto drop-shadow-lg"
+                alt="Asli Bogor"
+              />
             </div>
             <p className="body-3 mb-4" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
               Platform digital untuk UMKM Bogor yang menghubungkan produk lokal berkualitas dengan pelanggan di seluruh Indonesia.

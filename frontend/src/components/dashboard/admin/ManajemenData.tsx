@@ -7,7 +7,6 @@ import { Badge } from '../../ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
 import { 
   Search, 
-  Filter, 
   Download, 
   Edit, 
   Trash2, 
@@ -16,7 +15,6 @@ import {
   ChevronDown,
   MoreVertical,
   RefreshCw,
-  Settings
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -77,19 +75,30 @@ export function ManajemenData() {
       return matchesSearch && matchesRole && matchesStatus;
     })
     .sort((a, b) => {
-      let aVal: any = a[sortField];
-      let bVal: any = b[sortField];
-      
-      if (sortField === 'joinDate') {
-        aVal = new Date(aVal).getTime();
-        bVal = new Date(bVal).getTime();
+      const getValue = (item: DataItem): number | string => {
+        switch (sortField) {
+          case 'name':
+            return item.name.toLowerCase();
+          case 'joinDate':
+            return new Date(item.joinDate).getTime();
+          case 'totalOrders':
+            return item.totalOrders;
+          case 'rating':
+            return item.rating;
+          default:
+            return item.name.toLowerCase();
+        }
+      };
+
+      const valueA = getValue(a);
+      const valueB = getValue(b);
+
+      if (typeof valueA === 'number' && typeof valueB === 'number') {
+        return sortOrder === 'asc' ? valueA - valueB : valueB - valueA;
       }
-      
-      if (sortOrder === 'asc') {
-        return aVal > bVal ? 1 : -1;
-      } else {
-        return aVal < bVal ? 1 : -1;
-      }
+
+      const comparison = String(valueA).localeCompare(String(valueB));
+      return sortOrder === 'asc' ? comparison : -comparison;
     });
 
   const getStatusBadge = (status: string) => {

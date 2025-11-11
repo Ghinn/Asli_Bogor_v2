@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { Button } from '../ui/button';
 import { Download, TrendingUp, Calendar } from 'lucide-react';
 import { useState } from 'react';
@@ -12,6 +12,12 @@ interface AnalyticsChartProps {
 
 export function AnalyticsChart({ type }: AnalyticsChartProps) {
   const [period, setPeriod] = useState<'weekly' | 'monthly' | 'yearly'>('weekly');
+
+  const handlePeriodChange = (value: string) => {
+    if (value === 'weekly' || value === 'monthly' || value === 'yearly') {
+      setPeriod(value);
+    }
+  };
 
   // Sample data - would come from API in production
   const salesData = {
@@ -79,7 +85,7 @@ export function AnalyticsChart({ type }: AnalyticsChartProps) {
         </div>
         
         <div className="flex items-center gap-3">
-          <Tabs value={period} onValueChange={(v) => setPeriod(v as any)}>
+          <Tabs value={period} onValueChange={handlePeriodChange}>
             <TabsList>
               <TabsTrigger value="weekly">Minggu Ini</TabsTrigger>
               <TabsTrigger value="monthly">Bulan Ini</TabsTrigger>
@@ -143,7 +149,13 @@ export function AnalyticsChart({ type }: AnalyticsChartProps) {
                       borderRadius: '8px',
                       boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                     }}
-                    formatter={(value: any) => [`Rp ${value.toLocaleString('id-ID')}`, 'Total']}
+                    formatter={(value: number | string) => {
+                      const numericValue = typeof value === 'number' ? value : Number(value);
+                      const formatted = Number.isFinite(numericValue)
+                        ? `Rp ${numericValue.toLocaleString('id-ID')}`
+                        : String(value);
+                      return [formatted, 'Total'];
+                    }}
                   />
                   <Line 
                     type="monotone" 
@@ -191,7 +203,11 @@ export function AnalyticsChart({ type }: AnalyticsChartProps) {
                       borderRadius: '8px',
                       boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                     }}
-                    formatter={(value: any) => [`${value} pesanan`, 'Total']}
+                    formatter={(value: number | string) => {
+                      const numericValue = typeof value === 'number' ? value : Number(value);
+                      const formatted = Number.isFinite(numericValue) ? `${numericValue} pesanan` : `${value} pesanan`;
+                      return [formatted, 'Total'];
+                    }}
                   />
                   <Bar 
                     dataKey="orders" 

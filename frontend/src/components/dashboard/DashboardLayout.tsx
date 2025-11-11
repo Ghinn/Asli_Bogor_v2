@@ -1,4 +1,5 @@
-import { ReactNode, useState } from 'react';
+import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { Badge } from '../ui/badge';
@@ -7,6 +8,8 @@ import { FloatingShapes } from '../FloatingShapes';
 import { ParticleRain } from '../ParticleRain';
 import { MountainSilhouette } from '../MountainSilhouette';
 import { motion } from 'framer-motion';
+
+import { AsliBogorLogo } from '../ui/asli-bogor-logo';
 import { 
   LayoutDashboard, 
   Store, 
@@ -24,7 +27,6 @@ import {
   TrendingUp,
   Wallet,
   Info,
-  Bike,
   Navigation,
   User,
   Menu,
@@ -115,9 +117,10 @@ export function DashboardLayout({ children, activeMenu, onMenuChange }: Dashboar
       {/* Logo */}
       <div className="p-6 border-b" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#FF8D28] rounded-lg flex items-center justify-center">
-            <span className="body-3" style={{ color: '#FFFFFF', fontWeight: 600 }}>AB</span>
-          </div>
+          <AsliBogorLogo
+            variant="logomark"
+            className="flex-shrink-0"
+          />
           <div>
             <p className="body-3" style={{ color: '#FFFFFF', fontWeight: 600 }}>Asli Bogor</p>
             <p className="body-3" style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>
@@ -256,11 +259,15 @@ export function DashboardLayout({ children, activeMenu, onMenuChange }: Dashboar
             <Menu size={24} style={{ color: '#2F4858' }} />
           </button>
           <motion.h3
-            style={{ color: '#2F4858' }}
+            className="flex items-center gap-2 text-[#2F4858]"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             key={activeMenu}
           >
+            <AsliBogorLogo
+              variant="logomark"
+              className="hidden sm:block h-8 w-8"
+            />
             {menuItems.find(item => item.id === activeMenu)?.label || 'Dashboard'}
           </motion.h3>
           <div className="w-6" /> {/* Spacer for centering */}
