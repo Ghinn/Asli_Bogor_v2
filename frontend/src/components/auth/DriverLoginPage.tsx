@@ -8,6 +8,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 import { Truck, ArrowLeft, MapPin, Package } from 'lucide-react';
 
+import { AsliBogorLogo } from '../ui/asli-bogor-logo';
+
 interface DriverLoginPageProps {
   onSwitchToRegister: () => void;
   onBack: () => void;
@@ -27,6 +29,7 @@ export function DriverLoginPage({ onSwitchToRegister, onBack }: DriverLoginPageP
       await login(email, password);
       toast.success('Login berhasil! Selamat datang Driver.');
     } catch (error) {
+      console.error('Driver login error:', error);
       toast.error('Login gagal. Periksa kembali email dan password Anda.');
     } finally {
       setIsLoading(false);
@@ -96,6 +99,10 @@ export function DriverLoginPage({ onSwitchToRegister, onBack }: DriverLoginPageP
             <CardContent className="p-8">
               {/* Logo & Icon */}
               <div className="flex flex-col items-center mb-6">
+                <AsliBogorLogo
+                  variant="primary"
+                  className="h-12 w-auto mb-4"
+                />
                 <motion.div
                   className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mb-4"
                   whileHover={{ scale: 1.1, rotate: 5 }}

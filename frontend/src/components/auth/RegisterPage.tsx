@@ -7,6 +7,8 @@ import { useAuth, UserRole } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 import { User, Store, Bike, Shield } from 'lucide-react';
 
+import { AsliBogorLogo } from '../ui/asli-bogor-logo';
+
 interface RegisterPageProps {
   onSwitchToLogin: () => void;
   onClose: () => void;
@@ -36,6 +38,7 @@ export function RegisterPage({ onSwitchToLogin, onClose }: RegisterPageProps) {
       toast.success('Registrasi berhasil!');
       onClose();
     } catch (error) {
+      console.error('Registrasi error:', error);
       toast.error('Registrasi gagal. Silakan coba lagi.');
     } finally {
       setIsLoading(false);
@@ -47,9 +50,7 @@ export function RegisterPage({ onSwitchToLogin, onClose }: RegisterPageProps) {
       <Card className="w-full max-w-2xl">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
-            <div className="w-16 h-16 bg-[#FF8D28] rounded-xl flex items-center justify-center">
-              <span className="text-white" style={{ fontSize: '24px', fontWeight: 600 }}>AB</span>
-            </div>
+            <AsliBogorLogo variant="primary" className="h-16 w-auto" />
           </div>
           <CardTitle className="text-center" style={{ color: '#2F4858' }}>
             Daftar Asli Bogor

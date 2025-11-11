@@ -8,6 +8,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 import { User, ArrowLeft } from 'lucide-react';
 
+import { AsliBogorLogo } from '../ui/asli-bogor-logo';
+
 interface UserRegisterPageProps {
   onSwitchToLogin: () => void;
   onBack: () => void;
@@ -35,6 +37,7 @@ export function UserRegisterPage({ onSwitchToLogin, onBack }: UserRegisterPagePr
       await register(name, email, password, 'user');
       toast.success('Registrasi berhasil! Selamat berbelanja.');
     } catch (error) {
+      console.error('User registration error:', error);
       toast.error('Registrasi gagal. Silakan coba lagi.');
     } finally {
       setIsLoading(false);
@@ -70,6 +73,10 @@ export function UserRegisterPage({ onSwitchToLogin, onBack }: UserRegisterPagePr
           <Card className="bg-white shadow-2xl">
             <CardContent className="p-8">
               <div className="flex flex-col items-center mb-6">
+                <AsliBogorLogo
+                  variant="primary"
+                  className="h-12 w-auto mb-4"
+                />
                 <motion.div
                   className="w-20 h-20 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-full flex items-center justify-center mb-4"
                   whileHover={{ scale: 1.1, rotate: 5 }}

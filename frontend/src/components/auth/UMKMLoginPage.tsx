@@ -8,6 +8,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 import { Store, ArrowLeft, ShoppingBag, TrendingUp, Users } from 'lucide-react';
 
+import { AsliBogorLogo } from '../ui/asli-bogor-logo';
+
 interface UMKMLoginPageProps {
   onSwitchToRegister: () => void;
   onBack: () => void;
@@ -27,6 +29,7 @@ export function UMKMLoginPage({ onSwitchToRegister, onBack }: UMKMLoginPageProps
       await login(email, password);
       toast.success('Login berhasil! Selamat datang UMKM.');
     } catch (error) {
+      console.error('UMKM login error:', error);
       toast.error('Login gagal. Periksa kembali email dan password Anda.');
     } finally {
       setIsLoading(false);
@@ -96,6 +99,10 @@ export function UMKMLoginPage({ onSwitchToRegister, onBack }: UMKMLoginPageProps
             <CardContent className="p-8">
               {/* Logo & Icon */}
               <div className="flex flex-col items-center mb-6">
+                <AsliBogorLogo
+                  variant="primary"
+                  className="h-12 w-auto mb-4"
+                />
                 <motion.div
                   className="w-20 h-20 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center mb-4"
                   whileHover={{ scale: 1.1, rotate: 5 }}

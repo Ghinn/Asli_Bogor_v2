@@ -11,12 +11,11 @@ import { Download, FileText, Table } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ExportButtonProps {
-  data?: any;
   filename?: string;
   variant?: 'default' | 'outline';
 }
 
-export function ExportButton({ data, filename = 'laporan', variant = 'outline' }: ExportButtonProps) {
+export function ExportButton({ filename = 'laporan', variant = 'outline' }: ExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExportPDF = async () => {

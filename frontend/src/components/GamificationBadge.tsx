@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion';
-import { Trophy, Star, Zap, Award, TrendingUp, Crown } from 'lucide-react';
+import { Trophy, Star, Zap, Award, Crown } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 
 interface Badge {
   id: string;
   title: string;
   description: string;
-  icon: any;
+  icon: LucideIcon;
   color: string;
   earned: boolean;
   progress?: number;

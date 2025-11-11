@@ -2,6 +2,8 @@ import { Button } from "./ui/button";
 import { Menu } from "lucide-react";
 import { useState } from "react";
 
+import { AsliBogorLogo } from "./ui/asli-bogor-logo";
+
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -19,12 +21,16 @@ export function Header() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-[#FF8D28] rounded-lg flex items-center justify-center">
-                <span className="body-3" style={{ color: '#FFFFFF', fontWeight: 600 }}>AB</span>
-              </div>
-              <span className="body-3" style={{ color: '#2F4858', fontWeight: 600 }}>Asli Bogor</span>
-            </div>
+            <a
+              href="#hero"
+              className="flex items-center"
+              aria-label="Asli Bogor beranda"
+            >
+              <AsliBogorLogo
+                variant="primary"
+                className="h-10 w-auto"
+              />
+            </a>
           </div>
 
           {/* Desktop Navigation */}

@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Bell, Moon, Globe, Shield, Lock, Eye, EyeOff } from 'lucide-react';
+import { Bell, Moon, Shield, Lock, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '../ui/input';
 

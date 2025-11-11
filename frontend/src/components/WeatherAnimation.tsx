@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useWeather } from '../contexts/WeatherContext';
-import { CloudRain, Cloud, Sun } from 'lucide-react';
+import { Cloud } from 'lucide-react';
 
 export function WeatherAnimation() {
   const { weather, isRaining } = useWeather();

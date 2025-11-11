@@ -8,6 +8,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 import { User, ArrowLeft, ShoppingCart, Heart, Star } from 'lucide-react';
 
+import { AsliBogorLogo } from '../ui/asli-bogor-logo';
+
 interface UserLoginPageProps {
   onSwitchToRegister: () => void;
   onBack: () => void;
@@ -27,6 +29,7 @@ export function UserLoginPage({ onSwitchToRegister, onBack }: UserLoginPageProps
       await login(email, password);
       toast.success('Login berhasil! Selamat berbelanja.');
     } catch (error) {
+      console.error('User login error:', error);
       toast.error('Login gagal. Periksa kembali email dan password Anda.');
     } finally {
       setIsLoading(false);
@@ -96,6 +99,10 @@ export function UserLoginPage({ onSwitchToRegister, onBack }: UserLoginPageProps
             <CardContent className="p-8">
               {/* Logo & Icon */}
               <div className="flex flex-col items-center mb-6">
+                <AsliBogorLogo
+                  variant="primary"
+                  className="h-12 w-auto mb-4"
+                />
                 <motion.div
                   className="w-20 h-20 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-full flex items-center justify-center mb-4"
                   whileHover={{ scale: 1.1, rotate: 5 }}

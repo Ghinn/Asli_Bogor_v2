@@ -1,6 +1,5 @@
-import { motion } from "framer-motion";
 import { Button } from "./ui/button";
-import { ArrowLeft, MapPin, Phone, Clock, Star } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Clock } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 interface UMKMDetailPageProps {

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
+import { Card, CardContent } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import { Input } from '../../ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '../../ui/tabs';
 import {
   FileText,
   Megaphone,
@@ -14,7 +14,6 @@ import {
   Heart,
   MessageSquare,
   Edit,
-  Trash2,
   Plus,
   Search,
   Filter,
@@ -39,6 +38,12 @@ interface Content {
 export function ManajemenKonten() {
   const [activeTab, setActiveTab] = useState<'all' | 'article' | 'announcement' | 'promotion'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const handleTabChange = (value: string) => {
+    if (value === 'all' || value === 'article' || value === 'announcement' || value === 'promotion') {
+      setActiveTab(value);
+    }
+  };
 
   const contents: Content[] = [
     {
@@ -247,7 +252,7 @@ export function ManajemenKonten() {
         <Card>
           <CardContent className="p-4">
             <div className="flex flex-col md:flex-row gap-4 items-center">
-              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1">
+              <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1">
                 <TabsList>
                   <TabsTrigger value="all">Semua</TabsTrigger>
                   <TabsTrigger value="article">Artikel</TabsTrigger>

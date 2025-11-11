@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 
+import { AsliBogorLogo } from '../ui/asli-bogor-logo';
+
 interface LoginPageProps {
   onSwitchToRegister: () => void;
   onClose: () => void;
@@ -26,6 +28,7 @@ export function LoginPage({ onSwitchToRegister, onClose }: LoginPageProps) {
       toast.success('Login berhasil!');
       onClose();
     } catch (error) {
+      console.error('Login error:', error);
       toast.error('Login gagal. Periksa kembali email dan password Anda.');
     } finally {
       setIsLoading(false);
@@ -37,9 +40,7 @@ export function LoginPage({ onSwitchToRegister, onClose }: LoginPageProps) {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
-            <div className="w-16 h-16 bg-[#FF8D28] rounded-xl flex items-center justify-center">
-              <span className="text-white" style={{ fontSize: '24px', fontWeight: 600 }}>AB</span>
-            </div>
+            <AsliBogorLogo variant="primary" className="h-16 w-auto" />
           </div>
           <CardTitle className="text-center" style={{ color: '#2F4858' }}>
             Masuk ke Asli Bogor

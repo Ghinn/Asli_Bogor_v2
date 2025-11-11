@@ -1,6 +1,8 @@
 import { Button } from "./ui/button";
 import { motion } from "framer-motion";
-import { Mountain, Leaf, CloudRain } from "lucide-react";
+import { Leaf } from "lucide-react";
+
+import { AsliBogorLogo } from "./ui/asli-bogor-logo";
 
 export function NewHeroSection() {
   const scrollToDirectory = () => {
@@ -93,22 +95,14 @@ export function NewHeroSection() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-              className="flex items-center space-x-2 text-green-700"
+              transition={{ delay: 0.25, duration: 0.6 }}
+              className="flex items-center"
             >
-              <Mountain size={24} />
-              <CloudRain size={24} />
-              <Leaf size={24} />
+              <AsliBogorLogo
+                variant="primary"
+                className="h-20 w-auto drop-shadow-lg"
+              />
             </motion.div>
-
-            <motion.h1 
-              className="text-gradient"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-            >
-              Asli Bogor
-            </motion.h1>
 
             <motion.h3
               style={{ color: '#2F4858' }}
@@ -175,7 +169,7 @@ export function NewHeroSection() {
                 <p className="body-3" style={{ color: '#4A4A4A' }}>Pengguna Aktif</p>
               </div>
               <div className="text-center">
-                <h3 style={{ color: '#FFB84D' }}>50+</h3>
+                <h3 style={{ color: '#2F4858' }}>50+</h3>
                 <p className="body-3" style={{ color: '#4A4A4A' }}>Driver Siap</p>
               </div>
             </motion.div>

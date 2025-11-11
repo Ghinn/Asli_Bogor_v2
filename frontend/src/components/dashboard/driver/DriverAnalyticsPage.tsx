@@ -1,16 +1,22 @@
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Bike, DollarSign, MapPin, Star, TrendingUp, Zap, Gift, Target } from 'lucide-react';
 import { AnimatedCounter } from '../../AnimatedCounter';
 import { Progress } from '../../ui/progress';
 import { Badge } from '../../ui/badge';
 import { ExportButton } from '../ExportButton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '../../ui/tabs';
 import { useState } from 'react';
 
 export function DriverAnalyticsPage() {
   const [period, setPeriod] = useState<'today' | 'week' | 'month'>('today');
+
+  const handlePeriodChange = (value: string) => {
+    if (value === 'today' || value === 'week' || value === 'month') {
+      setPeriod(value);
+    }
+  };
 
   const stats = [
     {
@@ -212,7 +218,7 @@ export function DriverAnalyticsPage() {
             <CardTitle style={{ color: '#2F4858' }}>
               Performa Pengiriman
             </CardTitle>
-            <Tabs value={period} onValueChange={(v) => setPeriod(v as any)}>
+            <Tabs value={period} onValueChange={handlePeriodChange}>
               <TabsList>
                 <TabsTrigger value="today">Hari Ini</TabsTrigger>
                 <TabsTrigger value="week">Minggu Ini</TabsTrigger>

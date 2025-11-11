@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
-import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
@@ -9,22 +8,39 @@ import {
   DollarSign,
   TrendingUp,
   TrendingDown,
-  Download,
-  FileText,
   PieChart as PieChartIcon,
   BarChart3,
-  Calendar,
   AlertCircle,
   CheckCircle,
   Clock
 } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { ExportButton } from '../ExportButton';
 import { AnimatedCounter } from '../../AnimatedCounter';
 
 export function LayananLaporan() {
   const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('monthly');
   const [activeTab, setActiveTab] = useState<'keuangan' | 'transaksi' | 'layanan'>('keuangan');
+
+  const handlePeriodChange = (value: string) => {
+    if (value === 'daily' || value === 'weekly' || value === 'monthly' || value === 'yearly') {
+      setPeriod(value);
+    }
+  };
+
+  const handleTabChange = (value: string) => {
+    if (value === 'keuangan' || value === 'transaksi' || value === 'layanan') {
+      setActiveTab(value);
+    }
+  };
+
+  const formatCurrency = (value: number | string) => {
+    const numericValue = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(numericValue)) {
+      return `Rp ${String(value)}`;
+    }
+    return `Rp ${numericValue.toLocaleString('id-ID')}`;
+  };
 
   const financialStats = [
     {
@@ -171,7 +187,7 @@ export function LayananLaporan() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Select value={period} onValueChange={(v) => setPeriod(v as any)}>
+          <Select value={period} onValueChange={handlePeriodChange}>
             <SelectTrigger className="w-40">
               <SelectValue />
             </SelectTrigger>
@@ -187,7 +203,7 @@ export function LayananLaporan() {
       </motion.div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList>
           <TabsTrigger value="keuangan">Keuangan</TabsTrigger>
           <TabsTrigger value="transaksi">Transaksi</TabsTrigger>
@@ -269,7 +285,7 @@ export function LayananLaporan() {
                       border: '1px solid #E0E0E0',
                       borderRadius: '8px'
                     }}
-                    formatter={(value: any) => `Rp ${value.toLocaleString('id-ID')}`}
+                    formatter={(value: number | string) => formatCurrency(value)}
                   />
                   <Legend />
                   <Line 
@@ -326,7 +342,7 @@ export function LayananLaporan() {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value: any) => `Rp ${value.toLocaleString('id-ID')}`} />
+                    <Tooltip formatter={(value: number | string) => formatCurrency(value)} />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
