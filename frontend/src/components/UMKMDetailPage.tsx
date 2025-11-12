@@ -144,7 +144,7 @@ interface UMKMDetailPageProps {
     mapsLink?: string;
   };
   onBack: () => void;
-  onShopClick?: () => void;
+  onStartOrder?: () => void;
 }
 
 // Function to get product images for gallery based on UMKM
@@ -171,7 +171,7 @@ const getProductImagesForUMKM = (umkmId: number, defaultImage: string): string[]
   ];
 };
 
-export function UMKMDetailPage({ umkm, onBack, onShopClick }: UMKMDetailPageProps) {
+export function UMKMDetailPage({ umkm, onBack, onStartOrder }: UMKMDetailPageProps) {
   // Get product-specific images for gallery based on products sold
   const galleryImages = getProductImagesForUMKM(umkm.id, umkm.image);
 
@@ -316,7 +316,7 @@ export function UMKMDetailPage({ umkm, onBack, onShopClick }: UMKMDetailPageProp
               <Button 
                 style={{ backgroundColor: '#FF8D28', color: '#FFFFFF' }}
                 className="w-full"
-                onClick={onShopClick}
+                onClick={onStartOrder}
               >
                 Mulai Pesan dari Toko Ini
               </Button>

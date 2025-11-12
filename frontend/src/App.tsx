@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { WeatherProvider } from "./contexts/WeatherContext";
+import { OrderProvider } from "./contexts/OrderContext";
 import { NewHeroSection } from "./components/NewHeroSection";
 import { DirectorySection } from "./components/DirectorySection";
 import { AuthSectionLanding } from "./components/AuthSectionLanding";
@@ -67,11 +68,6 @@ function AppContent() {
         element.scrollIntoView({ behavior: 'smooth' });
       }
     }, 100);
-  };
-
-  const handleShopClick = (umkm: UMKMItem) => {
-    setShopUMKM(umkm);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBackFromShop = () => {
@@ -204,13 +200,12 @@ function AppContent() {
 
   // Show UMKM detail page if selected
   if (selectedUMKM) {
+    const handleStartOrder = () => {
+      setAuthView('user-login');
+    };
     return (
       <>
-        <UMKMDetailPage 
-          umkm={selectedUMKM} 
-          onBack={handleBackToDirectory}
-          onShopClick={() => handleShopClick(selectedUMKM)}
-        />
+        <UMKMDetailPage umkm={selectedUMKM} onBack={handleBackToDirectory} onStartOrder={handleStartOrder} />
         <Footer />
       </>
     );
@@ -236,8 +231,10 @@ export default function App() {
     <AuthProvider>
       <NotificationProvider>
         <WeatherProvider>
-          <AppContent />
-          <Toaster />
+          <OrderProvider>
+            <AppContent />
+            <Toaster />
+          </OrderProvider>
         </WeatherProvider>
       </NotificationProvider>
     </AuthProvider>
