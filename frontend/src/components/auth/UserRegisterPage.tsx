@@ -34,11 +34,16 @@ export function UserRegisterPage({ onSwitchToLogin, onBack }: UserRegisterPagePr
     setIsLoading(true);
     
     try {
-      await register(name, email, password, 'user');
+      await register({
+        name,
+        email,
+        password,
+        role: 'user',
+      });
       toast.success('Registrasi berhasil! Selamat berbelanja.');
-    } catch (error) {
+    } catch (error: any) {
       console.error('User registration error:', error);
-      toast.error('Registrasi gagal. Silakan coba lagi.');
+      toast.error(error.message || 'Registrasi gagal. Silakan coba lagi.');
     } finally {
       setIsLoading(false);
     }

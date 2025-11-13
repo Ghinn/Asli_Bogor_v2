@@ -1,6 +1,8 @@
-import { createContext, useContext, useEffect, useMemo, useReducer } from "react";
+import { createContext, useContext, useEffect, useMemo, useReducer, useState } from "react";
+import { api } from "../config/api";
+import { useAuth } from "./AuthContext";
 
-export type OrderStatus = "preparing" | "ready" | "pickup" | "delivered";
+export type OrderStatus = "preparing" | "ready" | "pickup" | "delivered" | "completed";
 
 export interface OrderItem {
   id: string;
@@ -11,24 +13,33 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
-  storeId: string;
+  userId: string;
+  userName: string;
+  userEmail?: string;
+  umkmId: string;
+  storeId?: string; // Legacy support
   storeName: string;
   storeAddress: string;
   items: OrderItem[];
+  subtotal?: number;
   total: number;
   deliveryFee: number;
   status: OrderStatus;
   createdAt: string;
-  userName: string;
+  updatedAt?: string;
   deliveryAddress: string;
   paymentMethod?: string;
   driverName?: string;
   driverId?: string;
   pickupTime?: string;
+  deliveredAt?: string;
+  notes?: string;
 }
 
 export interface CreateOrderInput {
-  storeId: string;
+  userId: string;
+  umkmId: string;
+  storeId?: string; // Legacy support
   storeName: string;
   storeAddress: string;
   items: OrderItem[];
@@ -37,6 +48,7 @@ export interface CreateOrderInput {
   userName: string;
   deliveryAddress: string;
   paymentMethod?: string;
+  notes?: string;
 }
 
 type OrderAction =
@@ -47,42 +59,19 @@ type OrderAction =
 
 interface OrderContextValue {
   orders: Order[];
-  createOrder: (input: CreateOrderInput) => Order;
+  isLoading: boolean;
+  createOrder: (input: CreateOrderInput) => Promise<Order>;
   updateOrderStatus: (
     orderId: string,
     status: OrderStatus,
     changes?: Partial<Order>
-  ) => void;
-  updateOrder: (orderId: string, changes: Partial<Order>) => void;
+  ) => Promise<void>;
+  updateOrder: (orderId: string, changes: Partial<Order>) => Promise<void>;
+  refreshOrders: () => Promise<void>;
   clearOrders: () => void;
 }
 
-const ORDER_STORAGE_KEY = "asli-bogor-orders";
-
 const OrderContext = createContext<OrderContextValue | undefined>(undefined);
-
-const generateOrderId = () => {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return `order-${Date.now()}-${Math.round(Math.random() * 100000)}`;
-};
-
-const loadInitialOrders = (): Order[] => {
-  if (typeof window === "undefined") {
-    return [];
-  }
-  try {
-    const raw = window.localStorage.getItem(ORDER_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as Order[];
-    if (!Array.isArray(parsed)) return [];
-    return parsed;
-  } catch (error) {
-    console.warn("Failed to load orders from storage", error);
-    return [];
-  }
-};
 
 const orderReducer = (state: Order[], action: OrderAction): Order[] => {
   switch (action.type) {
@@ -108,44 +97,247 @@ interface OrderProviderProps {
 }
 
 export function OrderProvider({ children }: OrderProviderProps) {
-  const [orders, dispatch] = useReducer(orderReducer, [], loadInitialOrders);
+  const { user } = useAuth();
+  const [orders, dispatch] = useReducer(orderReducer, []);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Load orders from backend on mount and when user changes
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(orders));
-  }, [orders]);
+    if (!user) {
+      dispatch({ type: "LOAD", payload: [] });
+      return;
+    }
 
-  const createOrder = (input: CreateOrderInput): Order => {
+    const fetchOrders = async () => {
+      setIsLoading(true);
+      try {
+        let url = api.orders.getAll;
+        
+        // Filter berdasarkan role user
+        if (user.role === 'user') {
+          url += `?userId=${user.id}`;
+        } else if (user.role === 'umkm') {
+          url += `?umkmId=${user.id}`;
+        } else if (user.role === 'driver') {
+          url += `?driverId=${user.id}`;
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error('Gagal mengambil data orders');
+        }
+
+        const result = await response.json();
+        
+        // Transform data dari backend ke format frontend
+        const transformedOrders: Order[] = result.data.map((order: any) => ({
+          id: order.id,
+          userId: order.userId,
+          userName: order.userName,
+          userEmail: order.userEmail,
+          umkmId: order.umkmId,
+          storeId: order.umkmId, // Legacy support
+          storeName: order.storeName,
+          storeAddress: order.storeAddress,
+          items: order.items,
+          subtotal: order.subtotal,
+          total: order.total,
+          deliveryFee: order.deliveryFee,
+          status: order.status,
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt,
+          deliveryAddress: order.deliveryAddress,
+          paymentMethod: order.paymentMethod,
+          driverName: order.driverName,
+          driverId: order.driverId,
+          pickupTime: order.pickupTime,
+          deliveredAt: order.deliveredAt,
+          notes: order.notes,
+        }));
+
+        dispatch({ type: "LOAD", payload: transformedOrders });
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrders();
+
+    // Refresh orders every 30 seconds
+    const interval = setInterval(fetchOrders, 30000);
+    return () => clearInterval(interval);
+  }, [user?.id, user?.role]);
+
+  // Refresh orders function
+  const refreshOrders = async () => {
+    if (!user) return;
+
+    setIsLoading(true);
+    try {
+      let url = api.orders.getAll;
+      
+      if (user.role === 'user') {
+        url += `?userId=${user.id}`;
+      } else if (user.role === 'umkm') {
+        url += `?umkmId=${user.id}`;
+      } else if (user.role === 'driver') {
+        url += `?driverId=${user.id}`;
+      }
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Gagal mengambil data orders');
+      }
+
+      const result = await response.json();
+      const transformedOrders: Order[] = result.data.map((order: any) => ({
+        id: order.id,
+        userId: order.userId,
+        userName: order.userName,
+        userEmail: order.userEmail,
+        umkmId: order.umkmId,
+        storeId: order.umkmId,
+        storeName: order.storeName,
+        storeAddress: order.storeAddress,
+        items: order.items,
+        subtotal: order.subtotal,
+        total: order.total,
+        deliveryFee: order.deliveryFee,
+        status: order.status,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        deliveryAddress: order.deliveryAddress,
+        paymentMethod: order.paymentMethod,
+        driverName: order.driverName,
+        driverId: order.driverId,
+        pickupTime: order.pickupTime,
+        deliveredAt: order.deliveredAt,
+        notes: order.notes,
+      }));
+
+      dispatch({ type: "LOAD", payload: transformedOrders });
+    } catch (error) {
+      console.error('Error refreshing orders:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const createOrder = async (input: CreateOrderInput): Promise<Order> => {
+    if (!user) {
+      throw new Error('User harus login terlebih dahulu');
+    }
+
     const deliveryFee =
       input.deliveryFee ??
       Math.max(8000, Math.round((input.total * 0.12) / 1000) * 1000);
-    const order: Order = {
-      ...input,
-      id: generateOrderId(),
-      deliveryFee,
-      status: "preparing",
-      createdAt: new Date().toISOString(),
-    };
-    dispatch({ type: "CREATE", payload: order });
-    return order;
+
+    try {
+      const response = await fetch(api.orders.create, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: input.userId || user.id,
+          umkmId: input.umkmId,
+          storeName: input.storeName,
+          storeAddress: input.storeAddress,
+          items: input.items,
+          total: input.total,
+          deliveryFee,
+          deliveryAddress: input.deliveryAddress,
+          paymentMethod: input.paymentMethod || 'cash',
+          notes: input.notes,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Gagal membuat order');
+      }
+
+      const result = await response.json();
+      const newOrder: Order = {
+        ...result.data,
+        storeId: result.data.umkmId, // Legacy support
+      };
+
+      dispatch({ type: "CREATE", payload: newOrder });
+      return newOrder;
+    } catch (error: any) {
+      console.error('Create order error:', error);
+      throw error;
+    }
   };
 
-  const updateOrderStatus = (
+  const updateOrderStatus = async (
     orderId: string,
     status: OrderStatus,
     changes?: Partial<Order>
-  ) => {
-    dispatch({
-      type: "UPDATE",
-      payload: { id: orderId, changes: { status, ...changes } },
-    });
+  ): Promise<void> => {
+    try {
+      const updateData: any = { status };
+      if (changes?.driverId) updateData.driverId = changes.driverId;
+      if (changes?.notes) updateData.notes = changes.notes;
+
+      const response = await fetch(api.orders.updateStatus(orderId), {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        let errorMessage = 'Gagal update status order';
+        try {
+          const error = await response.json();
+          errorMessage = error.error || error.message || errorMessage;
+        } catch (e) {
+          // Jika response bukan JSON
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      dispatch({
+        type: "UPDATE",
+        payload: { id: orderId, changes: { ...result.data, ...changes } },
+      });
+    } catch (error: any) {
+      console.error('Update order status error:', error);
+      throw error;
+    }
   };
 
-  const updateOrder = (orderId: string, changes: Partial<Order>) => {
-    dispatch({
-      type: "UPDATE",
-      payload: { id: orderId, changes },
-    });
+  const updateOrder = async (orderId: string, changes: Partial<Order>): Promise<void> => {
+    try {
+      const response = await fetch(api.orders.updateStatus(orderId), {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(changes),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Gagal update order');
+      }
+
+      const result = await response.json();
+      dispatch({
+        type: "UPDATE",
+        payload: { id: orderId, changes: result.data },
+      });
+    } catch (error: any) {
+      console.error('Update order error:', error);
+      throw error;
+    }
   };
 
   const clearOrders = () => {
@@ -155,12 +347,14 @@ export function OrderProvider({ children }: OrderProviderProps) {
   const value = useMemo<OrderContextValue>(
     () => ({
       orders,
+      isLoading,
       createOrder,
       updateOrderStatus,
       updateOrder,
+      refreshOrders,
       clearOrders,
     }),
-    [orders]
+    [orders, isLoading]
   );
 
   return <OrderContext.Provider value={value}>{children}</OrderContext.Provider>;

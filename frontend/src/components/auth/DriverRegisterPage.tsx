@@ -35,11 +35,17 @@ export function DriverRegisterPage({ onSwitchToLogin, onBack }: DriverRegisterPa
     setIsLoading(true);
     
     try {
-      await register(name, email, password, 'driver');
+      await register({
+        name,
+        email,
+        password,
+        role: 'driver',
+        phone,
+      });
       toast.success('Registrasi berhasil! Selamat datang Driver.');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Driver registration error:', error);
-      toast.error('Registrasi gagal. Silakan coba lagi.');
+      toast.error(error.message || 'Registrasi gagal. Silakan coba lagi.');
     } finally {
       setIsLoading(false);
     }

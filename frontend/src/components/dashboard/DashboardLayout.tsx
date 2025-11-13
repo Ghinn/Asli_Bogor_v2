@@ -58,6 +58,7 @@ export function DashboardLayout({ children, activeMenu, onMenuChange }: Dashboar
           { id: 'persebaran', label: 'Persebaran UMKM', icon: MapPin },
           { id: 'persetujuan', label: 'Manajemen Persetujuan', icon: CheckSquare },
           { id: 'manajemen-data', label: 'Manajemen Data', icon: Users },
+          { id: 'manajemen-order', label: 'Manajemen Order', icon: ShoppingCart },
           { id: 'konten', label: 'Manajemen Konten', icon: FileText },
           { id: 'laporan', label: 'Layanan & Laporan', icon: AlertCircle },
           { id: 'keuangan', label: 'Keuangan', icon: DollarSign },
@@ -70,7 +71,7 @@ export function DashboardLayout({ children, activeMenu, onMenuChange }: Dashboar
         return [
           { id: 'beranda', label: 'Beranda', icon: Store },
           { id: 'keranjang', label: 'Keranjang', icon: ShoppingCart },
-          { id: 'wishlist', label: 'Wishlist', icon: Heart },
+          { id: 'wishlist', label: 'Favorit Saya', icon: Heart },
           { id: 'pesanan', label: 'Pesanan Saya', icon: Package },
           { id: 'tracking', label: 'Tracking Pesanan', icon: TrendingUp },
           { id: 'dompet', label: 'Dompet Saya', icon: Wallet },

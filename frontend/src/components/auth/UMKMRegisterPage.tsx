@@ -37,11 +37,18 @@ export function UMKMRegisterPage({ onSwitchToLogin, onBack }: UMKMRegisterPagePr
     setIsLoading(true);
     
     try {
-      await register(businessName, email, password, 'umkm');
+      await register({
+        businessName,
+        email,
+        password,
+        role: 'umkm',
+        address,
+        description,
+      });
       toast.success('Registrasi berhasil! Selamat datang di Asli Bogor.');
-    } catch (error) {
+    } catch (error: any) {
       console.error('UMKM registration error:', error);
-      toast.error('Registrasi gagal. Silakan coba lagi.');
+      toast.error(error.message || 'Registrasi gagal. Silakan coba lagi.');
     } finally {
       setIsLoading(false);
     }

@@ -8,9 +8,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 import { Upload, FileText, Store, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
+import { api } from '../../config/api';
 
 export function UMKMOnboarding() {
-  const { completeOnboarding } = useAuth();
+  const { user, completeOnboarding, refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     storeName: '',
@@ -28,14 +29,53 @@ export function UMKMOnboarding() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast.error('Anda harus login terlebih dahulu');
+      return;
+    }
+
     setIsLoading(true);
 
-    // Simulate upload delay
-    setTimeout(() => {
+    try {
+      // Buat FormData untuk mengirim file
+      const uploadFormData = new FormData();
+      uploadFormData.append('userId', user.id);
+      uploadFormData.append('storeName', formData.storeName);
+      uploadFormData.append('storeAddress', formData.storeAddress);
+      uploadFormData.append('storeDescription', formData.storeDescription);
+      uploadFormData.append('phoneNumber', formData.phoneNumber);
+      
+      // Append files
+      if (formData.ktpFile) uploadFormData.append('ktpFile', formData.ktpFile);
+      if (formData.storePhotoFile) uploadFormData.append('storePhotoFile', formData.storePhotoFile);
+      if (formData.businessPermitFile) uploadFormData.append('businessPermitFile', formData.businessPermitFile);
+
+      const response = await fetch(api.upload.umkm, {
+        method: 'POST',
+        body: uploadFormData, // Jangan set Content-Type, browser akan set otomatis dengan boundary
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Upload dokumen gagal');
+      }
+
+      const result = await response.json();
+      
+      // Update user data dengan data terbaru dari backend (termasuk isOnboarded: true)
+      await refreshUser();
+      
+      // Set isOnboarded di state agar langsung masuk dashboard
       completeOnboarding();
+      
       toast.success('Pendaftaran toko berhasil! Menunggu verifikasi admin.');
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast.error(error.message || 'Gagal mengupload dokumen. Silakan coba lagi.');
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   return (

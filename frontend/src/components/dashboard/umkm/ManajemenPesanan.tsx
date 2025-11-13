@@ -7,47 +7,35 @@ import { Package, User, MapPin, Clock, Phone, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import type { Order, OrderStatus } from "../../../contexts/OrderContext";
 import { useOrderContext } from "../../../contexts/OrderContext";
+import { useAuth } from "../../../contexts/AuthContext";
 
 export function ManajemenPesanan() {
-  const { orders, updateOrderStatus } = useOrderContext();
-  const storeOptions = useMemo(() => {
-    const unique = new Map<string, string>();
-    orders.forEach((order) => {
-      unique.set(order.storeId, order.storeName);
-    });
-    return Array.from(unique.entries()).map(([id, name]) => ({ id, name }));
-  }, [orders]);
-  const [activeStoreId, setActiveStoreId] = useState(() => storeOptions[0]?.id ?? "");
-
-  useEffect(() => {
-    if (storeOptions.length === 0) return;
-    if (!storeOptions.some((option) => option.id === activeStoreId)) {
-      setActiveStoreId(storeOptions[0].id);
-    }
-  }, [storeOptions, activeStoreId]);
-
-  const storeOrders = useMemo(
-    () => orders.filter((order) => !activeStoreId || order.storeId === activeStoreId),
-    [orders, activeStoreId]
+  const { user } = useAuth();
+  const { orders, updateOrderStatus, refreshOrders, isLoading } = useOrderContext();
+  
+  // Filter orders untuk UMKM yang sedang login
+  const umkmOrders = useMemo(
+    () => orders.filter((order) => order.umkmId === user?.id),
+    [orders, user?.id]
   );
 
   const newOrderIdsRef = useRef<Set<string>>(new Set());
   const initializedRef = useRef(false);
 
   useEffect(() => {
-    const currentIds = new Set(storeOrders.map((order) => order.id));
+    const currentIds = new Set(umkmOrders.map((order) => order.id));
     if (!initializedRef.current) {
       newOrderIdsRef.current = currentIds;
       initializedRef.current = true;
       return;
     }
-    storeOrders.forEach((order) => {
+    umkmOrders.forEach((order) => {
       if (!newOrderIdsRef.current.has(order.id) && order.status === "preparing") {
         toast.success(`Pesanan baru dari ${order.userName}`);
       }
     });
     newOrderIdsRef.current = currentIds;
-  }, [storeOrders]);
+  }, [umkmOrders]);
 
   const statusMessages: Record<OrderStatus, string> = {
     preparing: "Pesanan sedang disiapkan",
@@ -66,9 +54,15 @@ export function ManajemenPesanan() {
     return statusConfig[status];
   };
 
-  const handleStatusChange = (orderId: string, nextStatus: OrderStatus) => {
-    updateOrderStatus(orderId, nextStatus);
-    toast.success(statusMessages[nextStatus]);
+  const handleStatusChange = async (orderId: string, nextStatus: OrderStatus) => {
+    try {
+      await updateOrderStatus(orderId, nextStatus);
+      toast.success(statusMessages[nextStatus]);
+      // Refresh orders untuk mendapatkan data terbaru
+      await refreshOrders();
+    } catch (error: any) {
+      toast.error(error.message || 'Gagal update status pesanan');
+    }
   };
 
   const OrderCard = ({ order }: { order: Order }) => {
@@ -185,36 +179,22 @@ export function ManajemenPesanan() {
     );
   };
 
-  const newOrders = storeOrders.filter((o) => o.status === "preparing");
-  const processingOrders = storeOrders.filter((o) => ["ready", "pickup"].includes(o.status));
-  const completedOrders = storeOrders.filter((o) => o.status === "delivered");
-  const activeStoreName =
-    storeOptions.find((option) => option.id === activeStoreId)?.name ?? "Toko Anda";
+  const newOrders = umkmOrders.filter((o) => o.status === "preparing");
+  const processingOrders = umkmOrders.filter((o) => ["ready", "pickup"].includes(o.status));
+  const completedOrders = umkmOrders.filter((o) => o.status === "delivered" || o.status === "completed");
 
   return (
     <div>
-      {storeOptions.length > 1 && (
-        <div className="mb-6">
-          <label className="body-3 block mb-2" style={{ color: "#2F4858" }}>
-            Pilih Toko
-          </label>
-          <select
-            value={activeStoreId}
-            onChange={(event) => setActiveStoreId(event.target.value)}
-            className="w-full md:w-64 border rounded-md px-3 py-2"
-            style={{ borderColor: "#E0E0E0", color: "#2F4858" }}
-          >
-            {storeOptions.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.name}
-              </option>
-            ))}
-          </select>
+      {isLoading && (
+        <div className="text-center py-8">
+          <p style={{ color: '#858585' }}>Memuat data pesanan...</p>
         </div>
       )}
-      <h3 className="mb-4" style={{ color: "#2F4858" }}>
-        Manajemen Pesanan - {activeStoreName}
-      </h3>
+      {!isLoading && (
+        <>
+          <h3 className="mb-4" style={{ color: "#2F4858" }}>
+            Manajemen Pesanan
+          </h3>
       <Tabs defaultValue="new" className="w-full">
         <TabsList className="mb-6">
           <TabsTrigger value="new">Pesanan Baru ({newOrders.length})</TabsTrigger>
@@ -261,6 +241,8 @@ export function ManajemenPesanan() {
           )}
         </TabsContent>
       </Tabs>
+        </>
+      )}
     </div>
   );
 }

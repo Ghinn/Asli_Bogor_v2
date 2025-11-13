@@ -5,9 +5,11 @@ import { Badge } from "../../ui/badge";
 import { MapPin, Package, Clock, Navigation, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { useOrderContext } from "../../../contexts/OrderContext";
+import { useAuth } from "../../../contexts/AuthContext";
 
 export function OrderAktif() {
-  const { orders, updateOrderStatus } = useOrderContext();
+  const { user } = useAuth();
+  const { orders, updateOrderStatus, refreshOrders } = useOrderContext();
 
   const availableOrders = useMemo(
     () => orders.filter((order) => order.status === "ready" || order.status === "pickup"),
@@ -36,17 +38,35 @@ export function OrderAktif() {
     newOrderIdsRef.current = currentIds;
   }, [newOrders]);
 
-  const handleAcceptOrder = (orderId: string) => {
-    updateOrderStatus(orderId, "pickup", {
-      driverName: "Driver Satria",
-      pickupTime: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
-    });
-    toast.success("Order diterima! Segera menuju lokasi penjemputan.");
+  const handleAcceptOrder = async (orderId: string) => {
+    if (!user) {
+      toast.error('Anda harus login terlebih dahulu');
+      return;
+    }
+
+    try {
+      await updateOrderStatus(orderId, "pickup", {
+        driverId: user.id,
+        driverName: user.name,
+        pickupTime: new Date().toISOString(),
+      });
+      toast.success("Order diterima! Segera menuju lokasi penjemputan.");
+      // Refresh orders untuk mendapatkan data terbaru
+      await refreshOrders();
+    } catch (error: any) {
+      toast.error(error.message || 'Gagal menerima order');
+    }
   };
 
-  const handleCompleteOrder = (orderId: string) => {
-    updateOrderStatus(orderId, "delivered");
-    toast.success("Pesanan berhasil diantar! Upah telah ditambahkan ke dompet Anda.");
+  const handleCompleteOrder = async (orderId: string) => {
+    try {
+      await updateOrderStatus(orderId, "delivered");
+      toast.success("Pesanan berhasil diantar! Upah telah ditambahkan ke dompet Anda.");
+      // Refresh orders untuk mendapatkan data terbaru
+      await refreshOrders();
+    } catch (error: any) {
+      toast.error(error.message || 'Gagal menyelesaikan order');
+    }
   };
 
   const getStatusBadge = (status: "ready" | "pickup") => {

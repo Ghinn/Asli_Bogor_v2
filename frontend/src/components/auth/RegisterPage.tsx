@@ -34,12 +34,17 @@ export function RegisterPage({ onSwitchToLogin, onClose }: RegisterPageProps) {
     setIsLoading(true);
     
     try {
-      await register(name, email, password, selectedRole);
+      await register({
+        name,
+        email,
+        password,
+        role: selectedRole,
+      });
       toast.success('Registrasi berhasil!');
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registrasi error:', error);
-      toast.error('Registrasi gagal. Silakan coba lagi.');
+      toast.error(error.message || 'Registrasi gagal. Silakan coba lagi.');
     } finally {
       setIsLoading(false);
     }

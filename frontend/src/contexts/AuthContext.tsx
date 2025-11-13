@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { api } from '../config/api';
 
 export type UserRole = 'user' | 'umkm' | 'driver' | 'admin';
 
@@ -9,14 +10,30 @@ export interface User {
   role: UserRole;
   isOnboarded: boolean;
   isVerified: boolean;
+  status?: 'active' | 'inactive' | 'pending';
+  phone?: string;
+  address?: string;
+  description?: string;
+}
+
+interface RegisterData {
+  name?: string;
+  businessName?: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  phone?: string;
+  address?: string;
+  description?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, role: UserRole) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
   logout: () => void;
   completeOnboarding: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,65 +42,194 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
   const login = async (email: string, password: string) => {
-    // Mock login - in real app, this would call an API
-    // Special check for admin credentials
-    if (email === 'admin@gmail.com' && password === '123456') {
-      const adminUser: User = {
-        id: 'admin-001',
-        name: 'Admin Asli Bogor',
-        email: 'admin@gmail.com',
-        role: 'admin',
-        isOnboarded: true,
-        isVerified: true
-      };
-      setUser(adminUser);
-      return;
+    try {
+      const response = await fetch(api.auth.login, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Login gagal');
+      }
+
+      const data = await response.json();
+      setUser({
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        role: data.user.role,
+        isOnboarded: data.user.isOnboarded || false,
+        isVerified: data.user.isVerified || false,
+        status: data.user.status,
+        phone: data.user.phone,
+        address: data.user.address,
+        description: data.user.description,
+      });
+    } catch (error: any) {
+      console.error('Login error:', error);
+      // Handle network errors
+      if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+        throw new Error('Tidak dapat terhubung ke server. Pastikan backend sudah berjalan di http://localhost:3000');
+      }
+      throw error;
     }
-    
-    // For demo, we'll create a mock user based on email
-    const role = email.includes('admin') ? 'admin' 
-                : email.includes('umkm') ? 'umkm'
-                : email.includes('driver') ? 'driver'
-                : 'user';
-    
-    const mockUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: email.split('@')[0],
-      email,
-      role,
-      isOnboarded: role === 'user' || role === 'admin', // User and Admin don't need onboarding
-      isVerified: role === 'admin' || role === 'user'
-    };
-    
-    setUser(mockUser);
   };
 
-  const register = async (name: string, email: string, password: string, role: UserRole) => {
-    // Mock registration - in real app, this would call an API
-    const newUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      name,
-      email,
-      role,
-      isOnboarded: role === 'user' || role === 'admin',
-      isVerified: role === 'admin' || role === 'user'
-    };
-    
-    setUser(newUser);
+  const register = async (data: RegisterData) => {
+    try {
+      const response = await fetch(api.auth.register, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        let errorMessage = 'Registrasi gagal';
+        try {
+          const error = await response.json();
+          errorMessage = error.error || errorMessage;
+        } catch (e) {
+          // Jika response bukan JSON
+          errorMessage = `Server error: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      setUser({
+        id: result.user.id,
+        name: result.user.name,
+        email: result.user.email,
+        role: result.user.role,
+        isOnboarded: result.user.isOnboarded || false,
+        isVerified: result.user.isVerified || false,
+        status: result.user.status,
+        phone: result.user.phone,
+        address: result.user.address,
+        description: result.user.description,
+      });
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      // Handle network errors
+      if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+        throw new Error('Tidak dapat terhubung ke server. Pastikan backend sudah berjalan di http://localhost:3000');
+      }
+      throw error;
+    }
   };
 
   const logout = () => {
     setUser(null);
   };
 
-  const completeOnboarding = () => {
+  const completeOnboarding = async () => {
     if (user) {
+      // Update isOnboarded di state
       setUser({ ...user, isOnboarded: true });
+      
+      // Update juga di backend (optional, karena sudah diupdate saat upload)
+      try {
+        const response = await fetch(api.users.getById(user.id));
+        if (response.ok) {
+          const result = await response.json();
+          const updatedUser = result.data;
+          setUser({
+            id: updatedUser.id,
+            name: updatedUser.name,
+            email: updatedUser.email,
+            role: updatedUser.role,
+            isOnboarded: updatedUser.isOnboarded || true,
+            isVerified: updatedUser.isVerified || false,
+            status: updatedUser.status,
+            phone: updatedUser.phone,
+            address: updatedUser.address,
+            description: updatedUser.description,
+          });
+        }
+      } catch (error) {
+        console.error('Error updating onboarding status:', error);
+      }
     }
   };
 
+  // Refresh user data from backend
+  const refreshUser = async () => {
+    if (!user) return;
+
+    try {
+      const response = await fetch(api.users.getById(user.id));
+      
+      if (!response.ok) {
+        console.error('Failed to refresh user data');
+        return;
+      }
+
+      const result = await response.json();
+      const updatedUser = result.data;
+      
+      setUser({
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        isOnboarded: updatedUser.isOnboarded || false,
+        isVerified: updatedUser.isVerified || false,
+        status: updatedUser.status,
+        phone: updatedUser.phone,
+        address: updatedUser.address,
+        description: updatedUser.description,
+      });
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+    }
+  };
+
+  // Auto-refresh user data when component mounts (if user is logged in)
+  useEffect(() => {
+    if (!user || user.role === 'admin') return;
+
+    // Refresh user data on mount
+    const refresh = async () => {
+      try {
+        const response = await fetch(api.users.getById(user.id));
+        if (!response.ok) return;
+        const result = await response.json();
+        const updatedUser = result.data;
+        setUser({
+          id: updatedUser.id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          role: updatedUser.role,
+          isOnboarded: updatedUser.isOnboarded || false,
+          isVerified: updatedUser.isVerified || false,
+          status: updatedUser.status,
+          phone: updatedUser.phone,
+          address: updatedUser.address,
+          description: updatedUser.description,
+        });
+      } catch (error) {
+        console.error('Error refreshing user data:', error);
+      }
+    };
+    
+    refresh();
+    
+    // Refresh every 30 seconds to check for status updates
+    const interval = setInterval(() => {
+      refresh();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [user?.id]); // Only run when user ID changes
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, completeOnboarding }}>
+    <AuthContext.Provider value={{ user, login, register, logout, completeOnboarding, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

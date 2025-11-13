@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { DashboardLayout } from './DashboardLayout';
 
@@ -8,6 +8,7 @@ import { ManajemenPersetujuan } from './admin/ManajemenPersetujuan';
 import { AdminAnalyticsPage } from './admin/AdminAnalyticsPage';
 import { PersebaranUMKM } from './admin/PersebaranUMKM';
 import { ManajemenData } from './admin/ManajemenData';
+import { ManajemenOrder } from './admin/ManajemenOrder';
 import { ManajemenKonten } from './admin/ManajemenKonten';
 import { LayananLaporan } from './admin/LayananLaporan';
 import { AdminKeuangan } from './admin/AdminKeuangan';
@@ -59,7 +60,7 @@ function PlaceholderPage({ title }: { title: string }) {
 }
 
 export function DashboardWrapper() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [activeMenu, setActiveMenu] = useState(() => {
     // Set default menu based on role
     switch (user?.role) {
@@ -78,6 +79,13 @@ export function DashboardWrapper() {
 
   if (!user) return null;
 
+  // Refresh user data when dashboard opens
+  useEffect(() => {
+    if (user && user.role !== 'admin') {
+      refreshUser();
+    }
+  }, []); // Run once on mount
+
   const renderContent = () => {
     // Admin Pages
     if (user.role === 'admin') {
@@ -92,6 +100,8 @@ export function DashboardWrapper() {
           return <ManajemenPersetujuan />;
         case 'manajemen-data':
           return <ManajemenData />;
+        case 'manajemen-order':
+          return <ManajemenOrder />;
         case 'konten':
           return <ManajemenKonten />;
         case 'laporan':

@@ -1,52 +1,56 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Badge } from '../../ui/badge';
-import { Package, MapPin, Check, Bike, Store } from 'lucide-react';
-
-interface Order {
-  id: string;
-  orderNumber: string;
-  items: string[];
-  store: string;
-  driver?: string;
-  status: 'preparing' | 'pickup' | 'delivering' | 'delivered';
-  timeline: {
-    preparing?: string;
-    pickup?: string;
-    delivering?: string;
-    delivered?: string;
-  };
-  address: string;
-}
+import { Package, MapPin, Check, Bike, Store, Clock } from 'lucide-react';
+import { useOrders } from '../../../contexts/OrderContext';
+import type { OrderStatus } from '../../../contexts/OrderContext';
 
 export function TrackingPesanan() {
-  const [orders] = useState<Order[]>([
-    {
-      id: '1',
-      orderNumber: 'ORD-2025-001',
-      items: ['Tahu Gejrot Original (2x)', 'Es Pala Segar (1x)'],
-      store: 'Tahu Gejrot Pak Haji',
-      driver: 'Ahmad Fauzi',
-      status: 'delivering',
-      timeline: {
-        preparing: '10:30',
-        pickup: '10:45',
-        delivering: '10:50'
-      },
-      address: 'Jl. Pajajaran No. 123, Bogor'
-    },
-    {
-      id: '2',
-      orderNumber: 'ORD-2025-002',
-      items: ['Makaroni Ngehe Pedas (3x)'],
-      store: 'Makaroni Ngehe',
-      status: 'preparing',
-      timeline: {
-        preparing: '11:00'
-      },
-      address: 'Jl. Merdeka No. 45, Bogor'
+  const orders = useOrders();
+
+  // Map order status ke tracking status
+  const mapOrderStatus = (status: OrderStatus): 'preparing' | 'pickup' | 'delivering' | 'delivered' => {
+    if (status === 'preparing') return 'preparing';
+    if (status === 'ready') return 'preparing'; // ready masih di toko
+    if (status === 'pickup') return 'delivering'; // pickup berarti sedang diantar
+    if (status === 'delivered' || status === 'completed') return 'delivered';
+    return 'preparing';
+  };
+
+  // Format timeline dari order
+  const getTimeline = (order: any) => {
+    const timeline: any = {};
+    if (order.createdAt) {
+      timeline.preparing = new Date(order.createdAt).toLocaleTimeString('id-ID', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
     }
-  ]);
+    if (order.pickupTime) {
+      timeline.pickup = new Date(order.pickupTime).toLocaleTimeString('id-ID', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    }
+    if (order.status === 'pickup' && order.pickupTime) {
+      timeline.delivering = new Date(order.pickupTime).toLocaleTimeString('id-ID', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    }
+    if (order.deliveredAt || order.status === 'delivered' || order.status === 'completed') {
+      timeline.delivered = order.deliveredAt 
+        ? new Date(order.deliveredAt).toLocaleTimeString('id-ID', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          })
+        : new Date(order.updatedAt || order.createdAt).toLocaleTimeString('id-ID', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          });
+    }
+    return timeline;
+  };
 
   const getStatusText = (status: string) => {
     switch (status) {
@@ -147,11 +151,44 @@ export function TrackingPesanan() {
     );
   };
 
+  // Transform orders untuk tracking view
+  const trackingOrders = useMemo(() => {
+    return orders
+      .filter(order => order.status !== 'completed') // Hanya tampilkan yang belum completed
+      .map(order => ({
+        id: order.id,
+        orderNumber: order.id,
+        items: order.items.map(item => `${item.name} (${item.quantity}x)`),
+        store: order.storeName,
+        driver: order.driverName || undefined,
+        status: mapOrderStatus(order.status),
+        timeline: getTimeline(order),
+        address: order.deliveryAddress
+      }))
+      .sort((a, b) => {
+        // Sort by newest first
+        const orderA = orders.find(o => o.id === a.id);
+        const orderB = orders.find(o => o.id === b.id);
+        if (!orderA || !orderB) return 0;
+        return new Date(orderB.createdAt).getTime() - new Date(orderA.createdAt).getTime();
+      });
+  }, [orders]);
+
   return (
     <div className="space-y-6">
-      {orders.map(order => (
-        <Card key={order.id}>
-          <CardHeader>
+      {trackingOrders.length === 0 ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Package size={48} style={{ color: '#CCCCCC', margin: '0 auto' }} />
+            <p style={{ color: '#858585' }} className="mt-4">
+              Belum ada pesanan aktif untuk dilacak
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        trackingOrders.map(order => (
+          <Card key={order.id}>
+            <CardHeader>
             <div className="flex items-start justify-between">
               <div>
                 <CardTitle style={{ color: '#2F4858' }}>
@@ -232,18 +269,8 @@ export function TrackingPesanan() {
               </div>
             </div>
           </CardContent>
-        </Card>
-      ))}
-
-      {orders.length === 0 && (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Package size={48} style={{ color: '#CCCCCC', margin: '0 auto' }} />
-            <p style={{ color: '#858585' }} className="mt-4">
-              Belum ada pesanan aktif untuk dilacak
-            </p>
-          </CardContent>
-        </Card>
+          </Card>
+        ))
       )}
     </div>
   );

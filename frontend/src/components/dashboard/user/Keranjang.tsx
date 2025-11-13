@@ -18,6 +18,8 @@ import {
 } from '../../ui/alert-dialog';
 import type { OrderStatus } from '../../../contexts/OrderContext';
 import { useOrderById, useOrderContext } from '../../../contexts/OrderContext';
+import { useAuth } from '../../../contexts/AuthContext';
+import { api } from '../../../config/api';
 
 interface CartItem {
   id: string;
@@ -27,10 +29,12 @@ interface CartItem {
   quantity: number;
   image: string;
   store: string;
+  storeId?: string; // UMKM ID
   selected: boolean;
 }
 
 export function Keranjang() {
+  const { user } = useAuth();
   const { createOrder } = useOrderContext();
   const [cartItems, setCartItems] = useState<CartItem[]>([
     {
@@ -149,51 +153,99 @@ export function Keranjang() {
   };
 
   const proceedToPayment = async () => {
-    setIsProcessingPayment(true);
-    // Simulasi proses pembayaran
-    await new Promise(resolve => setTimeout(resolve, 1200));
-    setIsProcessingPayment(false);
-    setIsPaymentDone(true);
-    toast.success(`Pembayaran berhasil (${paymentMethod.toUpperCase()}).`);
-
-    const groupedByStore = selectedItems.reduce<Record<string, CartItem[]>>((acc, item) => {
-      if (!acc[item.store]) {
-        acc[item.store] = [];
-      }
-      acc[item.store].push(item);
-      return acc;
-    }, {});
-
-    const groupCount = Object.keys(groupedByStore).length || 1;
-    const perGroupShipping = shippingFee / groupCount;
-
-    const createdOrders = Object.entries(groupedByStore).map(([storeName, items]) => {
-      const itemsTotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-      const order = createOrder({
-        storeId: slugify(storeName),
-        storeName,
-        storeAddress: storeAddressMap[storeName as keyof typeof storeAddressMap] ?? 'Bogor, Jawa Barat',
-        items: items.map((item) => ({
-          id: item.productId,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-        })),
-        total: itemsTotal + perGroupShipping,
-        deliveryFee: perGroupShipping,
-        userName: 'Aisyah Putri',
-        deliveryAddress: 'Jl. Pajajaran No. 45, Bogor',
-        paymentMethod,
-      });
-      toast.info(`Pesanan baru terkirim ke ${storeName}.`);
-      return order;
-    });
-
-    if (createdOrders.length > 0) {
-      setTrackingOrderId(createdOrders[0].id);
+    if (!user) {
+      toast.error('Anda harus login terlebih dahulu');
+      return;
     }
 
-    setCartItems(items => items.filter(item => !item.selected));
+    setIsProcessingPayment(true);
+    
+    try {
+      // Simulasi proses pembayaran
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      
+      setIsProcessingPayment(false);
+      setIsPaymentDone(true);
+      toast.success(`Pembayaran berhasil (${paymentMethod.toUpperCase()}).`);
+
+      const groupedByStore = selectedItems.reduce<Record<string, CartItem[]>>((acc, item) => {
+        if (!acc[item.store]) {
+          acc[item.store] = [];
+        }
+        acc[item.store].push(item);
+        return acc;
+      }, {});
+
+      const groupCount = Object.keys(groupedByStore).length || 1;
+      const perGroupShipping = shippingFee / groupCount;
+
+      // Buat orders untuk setiap store
+      const orderPromises = Object.entries(groupedByStore).map(async ([storeName, items]) => {
+        const itemsTotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        
+        // Cari UMKM berdasarkan storeName
+        let umkmId = items[0]?.storeId; // Coba ambil dari CartItem jika ada
+        
+        // Jika tidak ada storeId, cari dari backend
+        if (!umkmId) {
+          try {
+            const response = await fetch(`${api.users.getAll}?role=UMKM`);
+            if (response.ok) {
+              const result = await response.json();
+              const umkm = result.data.find((u: any) => 
+                u.storeName === storeName || u.name === storeName
+              );
+              if (umkm) {
+                umkmId = umkm.id;
+              }
+            }
+          } catch (error) {
+            console.error('Error finding UMKM:', error);
+          }
+        }
+
+        // Jika masih tidak ada umkmId, gunakan storeName sebagai fallback
+        if (!umkmId) {
+          toast.error(`UMKM "${storeName}" tidak ditemukan`);
+          throw new Error(`UMKM "${storeName}" tidak ditemukan`);
+        }
+
+        // Create order via API
+        const order = await createOrder({
+          userId: user.id,
+          umkmId,
+          storeName,
+          storeAddress: storeAddressMap[storeName as keyof typeof storeAddressMap] ?? 'Bogor, Jawa Barat',
+          items: items.map((item) => ({
+            id: item.productId,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+          total: itemsTotal + perGroupShipping,
+          deliveryFee: perGroupShipping,
+          userName: user.name,
+          deliveryAddress: user.address || 'Jl. Pajajaran No. 45, Bogor',
+          paymentMethod,
+        });
+        
+        toast.info(`Pesanan baru terkirim ke ${storeName}.`);
+        return order;
+      });
+
+      const createdOrders = await Promise.all(orderPromises);
+
+      if (createdOrders.length > 0) {
+        setTrackingOrderId(createdOrders[0].id);
+      }
+
+      setCartItems(items => items.filter(item => !item.selected));
+    } catch (error: any) {
+      console.error('Checkout error:', error);
+      toast.error(error.message || 'Gagal membuat pesanan. Silakan coba lagi.');
+      setIsProcessingPayment(false);
+      setIsPaymentDone(false);
+    }
   };
 
   const closeCheckoutDialog = () => {

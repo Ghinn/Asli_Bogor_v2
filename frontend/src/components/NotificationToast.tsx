@@ -9,8 +9,9 @@ export function NotificationToast() {
   const [visibleNotifications, setVisibleNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
-    // Show only the latest 3 unread notifications
-    const unread = notifications.filter(n => !n.read).slice(0, 3);
+    // Show only the latest 1 unread notification (to avoid confusion)
+    // Full notifications are available in the notification page
+    const unread = notifications.filter(n => !n.read).slice(0, 1);
     setVisibleNotifications(unread);
   }, [notifications]);
 

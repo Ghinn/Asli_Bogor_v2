@@ -8,9 +8,10 @@ import { toast } from 'sonner';
 import { Upload, Bike, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { api } from '../../config/api';
 
 export function DriverOnboarding() {
-  const { completeOnboarding } = useAuth();
+  const { user, completeOnboarding, refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     phoneNumber: '',
@@ -29,14 +30,54 @@ export function DriverOnboarding() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast.error('Anda harus login terlebih dahulu');
+      return;
+    }
+
     setIsLoading(true);
 
-    // Simulate upload delay
-    setTimeout(() => {
+    try {
+      // Buat FormData untuk mengirim file
+      const uploadFormData = new FormData();
+      uploadFormData.append('userId', user.id);
+      uploadFormData.append('phoneNumber', formData.phoneNumber);
+      uploadFormData.append('vehicleType', formData.vehicleType);
+      uploadFormData.append('vehiclePlate', formData.vehiclePlate);
+      
+      // Append files
+      if (formData.ktpFile) uploadFormData.append('ktpFile', formData.ktpFile);
+      if (formData.simFile) uploadFormData.append('simFile', formData.simFile);
+      if (formData.stnkFile) uploadFormData.append('stnkFile', formData.stnkFile);
+      if (formData.selfieFile) uploadFormData.append('selfieFile', formData.selfieFile);
+      if (formData.vehiclePhotoFile) uploadFormData.append('vehiclePhotoFile', formData.vehiclePhotoFile);
+
+      const response = await fetch(api.upload.driver, {
+        method: 'POST',
+        body: uploadFormData, // Jangan set Content-Type, browser akan set otomatis dengan boundary
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Upload dokumen gagal');
+      }
+
+      const result = await response.json();
+      
+      // Update user data dengan data terbaru dari backend (termasuk isOnboarded: true)
+      await refreshUser();
+      
+      // Set isOnboarded di state agar langsung masuk dashboard
       completeOnboarding();
+      
       toast.success('Pendaftaran driver berhasil! Menunggu verifikasi admin.');
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast.error(error.message || 'Gagal mengupload dokumen. Silakan coba lagi.');
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   return (

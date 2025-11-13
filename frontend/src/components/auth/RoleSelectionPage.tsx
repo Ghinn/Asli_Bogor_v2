@@ -139,7 +139,7 @@ export function RoleSelectionPage({ onSelectRole, onClose }: RoleSelectionPagePr
         >
           <div className="bg-white bg-opacity-80 backdrop-blur-sm rounded-2xl p-6 inline-block">
             <p className="body-3" style={{ color: '#4A4A4A' }}>
-              <strong>Login Admin:</strong> Gunakan email <code className="bg-gray-200 px-2 py-1 rounded">admin@gmail.com</code> dengan password <code className="bg-gray-200 px-2 py-1 rounded">123456</code>
+              <strong>Login Admin:</strong> Gunakan email <code className="bg-gray-200 px-2 py-1 rounded">admin@gmail.com</code> dengan password <code className="bg-gray-200 px-2 py-1 rounded">123123</code>
             </p>
           </div>
         </motion.div>
