@@ -1,76 +1,103 @@
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
-import { MapPin, Navigation, Package, User } from 'lucide-react';
+import { MapPin, Navigation, Package, User, Loader2 } from 'lucide-react';
+import { useOrderContext } from '../../../contexts/OrderContext';
+import { useAuth } from '../../../contexts/AuthContext';
+import { TrackingMap } from '../user/TrackingMap';
 
 export function PetaNavigasi() {
-  const activeDelivery = {
-    orderNumber: 'ORD-2025-001',
-    customer: 'Budi Santoso',
-    address: 'Jl. Pajajaran No. 45, Bogor',
-    distance: '1.2 km',
-    estimatedTime: '8 menit',
-    status: 'delivering',
-    currentLocation: { lat: -6.5978, lng: 106.8067 }
-  };
+  const { user } = useAuth();
+  const { orders, refreshOrders } = useOrderContext();
+  const [activeOrder, setActiveOrder] = useState<any>(null);
+
+  useEffect(() => {
+    // Find active delivery order for this driver
+    const active = orders.find(order => 
+      order.driverId === user?.id && 
+      (order.status === 'pickup' || order.status === 'delivered')
+    );
+    setActiveOrder(active);
+  }, [orders, user]);
+
+  if (!activeOrder) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="p-12 text-center">
+            <MapPin size={48} style={{ color: '#CCCCCC', margin: '0 auto' }} />
+            <p style={{ color: '#858585' }} className="mt-4">
+              Belum ada pengantaran aktif. Terima order untuk melihat peta navigasi.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Active Delivery Info */}
-      {activeDelivery && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle style={{ color: '#2F4858' }}>Pengantaran Aktif</CardTitle>
-              <Badge style={{ backgroundColor: '#C8E6C9', color: '#2E7D32' }}>
-                Dalam Perjalanan
-              </Badge>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle style={{ color: '#2F4858' }}>Pengantaran Aktif</CardTitle>
+            <Badge style={{ backgroundColor: '#C8E6C9', color: '#2E7D32' }}>
+              Dalam Perjalanan
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-3 gap-4 mb-4">
+            <div className="p-3 rounded-lg" style={{ backgroundColor: '#F5F5F5' }}>
+              <p className="body-3" style={{ color: '#858585', marginBottom: '4px' }}>Order</p>
+              <p className="body-3" style={{ color: '#2F4858', fontWeight: 600 }}>
+                #{activeOrder.id.slice(-6).toUpperCase()}
+              </p>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-3 gap-4 mb-4">
-              <div className="p-3 rounded-lg" style={{ backgroundColor: '#F5F5F5' }}>
-                <p className="body-3" style={{ color: '#858585', marginBottom: '4px' }}>Order</p>
-                <p className="body-3" style={{ color: '#2F4858', fontWeight: 600 }}>
-                  {activeDelivery.orderNumber}
-                </p>
-              </div>
-              <div className="p-3 rounded-lg" style={{ backgroundColor: '#F5F5F5' }}>
-                <p className="body-3" style={{ color: '#858585', marginBottom: '4px' }}>Jarak</p>
-                <p className="body-3" style={{ color: '#2F4858', fontWeight: 600 }}>
-                  {activeDelivery.distance}
-                </p>
-              </div>
-              <div className="p-3 rounded-lg" style={{ backgroundColor: '#F5F5F5' }}>
-                <p className="body-3" style={{ color: '#858585', marginBottom: '4px' }}>Estimasi</p>
-                <p className="body-3" style={{ color: '#4CAF50', fontWeight: 600 }}>
-                  {activeDelivery.estimatedTime}
-                </p>
-              </div>
+            <div className="p-3 rounded-lg" style={{ backgroundColor: '#F5F5F5' }}>
+              <p className="body-3" style={{ color: '#858585', marginBottom: '4px' }}>Pelanggan</p>
+              <p className="body-3" style={{ color: '#2F4858', fontWeight: 600 }}>
+                {activeOrder.userName}
+              </p>
             </div>
+            <div className="p-3 rounded-lg" style={{ backgroundColor: '#F5F5F5' }}>
+              <p className="body-3" style={{ color: '#858585', marginBottom: '4px' }}>Upah</p>
+              <p className="body-3" style={{ color: '#4CAF50', fontWeight: 600 }}>
+                Rp {activeOrder.deliveryFee.toLocaleString('id-ID')}
+              </p>
+            </div>
+          </div>
 
-            <div className="p-4 rounded-lg mb-4" style={{ backgroundColor: '#E3F2FD' }}>
-              <div className="flex items-start gap-3">
-                <MapPin size={20} style={{ color: '#1976D2' }} />
-                <div>
-                  <p className="body-3" style={{ color: '#1976D2', fontWeight: 600, marginBottom: '4px' }}>
-                    Tujuan Pengantaran
-                  </p>
-                  <p className="body-3" style={{ color: '#2F4858' }}>{activeDelivery.customer}</p>
-                  <p className="body-3" style={{ color: '#858585', fontSize: '12px' }}>
-                    {activeDelivery.address}
-                  </p>
-                </div>
+          <div className="p-4 rounded-lg mb-4" style={{ backgroundColor: '#E3F2FD' }}>
+            <div className="flex items-start gap-3">
+              <MapPin size={20} style={{ color: '#1976D2' }} />
+              <div>
+                <p className="body-3" style={{ color: '#1976D2', fontWeight: 600, marginBottom: '4px' }}>
+                  Tujuan Pengantaran
+                </p>
+                <p className="body-3" style={{ color: '#2F4858' }}>{activeOrder.userName}</p>
+                <p className="body-3" style={{ color: '#858585', fontSize: '12px' }}>
+                  {activeOrder.deliveryAddress}
+                </p>
               </div>
             </div>
+          </div>
 
-            <Button className="w-full" style={{ backgroundColor: '#2196F3', color: '#FFFFFF' }}>
-              <Navigation size={20} className="mr-2" />
-              Buka Google Maps
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+          <Button 
+            className="w-full" 
+            style={{ backgroundColor: '#2196F3', color: '#FFFFFF' }}
+            onClick={() => {
+              const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(activeOrder.deliveryAddress)}`;
+              window.open(mapsUrl, '_blank');
+            }}
+          >
+            <Navigation size={20} className="mr-2" />
+            Buka Google Maps
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Map Container */}
       <Card>
@@ -78,38 +105,13 @@ export function PetaNavigasi() {
           <CardTitle style={{ color: '#2F4858' }}>Peta Navigasi Real-Time</CardTitle>
         </CardHeader>
         <CardContent>
-          <div 
-            className="w-full rounded-lg flex flex-col items-center justify-center p-12"
-            style={{ 
-              height: '500px',
-              backgroundColor: '#F5F5F5',
-              backgroundImage: 'linear-gradient(45deg, #E0E0E0 25%, transparent 25%, transparent 75%, #E0E0E0 75%, #E0E0E0), linear-gradient(45deg, #E0E0E0 25%, transparent 25%, transparent 75%, #E0E0E0 75%, #E0E0E0)',
-              backgroundSize: '20px 20px',
-              backgroundPosition: '0 0, 10px 10px'
-            }}
-          >
-            <div className="text-center max-w-md">
-              <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: '#FF8D28' }}>
-                <MapPin size={40} style={{ color: '#FFFFFF' }} />
-              </div>
-              <h4 style={{ color: '#2F4858' }} className="mb-3">
-                Peta Navigasi Aktif
-              </h4>
-              <p className="body-3 mb-4" style={{ color: '#858585' }}>
-                Peta akan menampilkan lokasi Anda secara real-time dan rute terbaik menuju alamat pelanggan
-              </p>
-              <div className="flex items-center justify-center gap-4 p-4 rounded-lg" style={{ backgroundColor: '#FFFFFF' }}>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#FF8D28' }}></div>
-                  <span className="body-3" style={{ color: '#858585' }}>Lokasi Anda</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#4CAF50' }}></div>
-                  <span className="body-3" style={{ color: '#858585' }}>Tujuan</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <TrackingMap
+            orderId={activeOrder.id}
+            storeAddress={activeOrder.storeAddress}
+            deliveryAddress={activeOrder.deliveryAddress}
+            driverLocation={activeOrder.driverLocation}
+            status={activeOrder.status}
+          />
         </CardContent>
       </Card>
 

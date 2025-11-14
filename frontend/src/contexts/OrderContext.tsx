@@ -34,6 +34,11 @@ export interface Order {
   pickupTime?: string;
   deliveredAt?: string;
   notes?: string;
+  driverLocation?: {
+    lat: number;
+    lng: number;
+    updatedAt: string;
+  } | null;
 }
 
 export interface CreateOrderInput {
@@ -153,6 +158,7 @@ export function OrderProvider({ children }: OrderProviderProps) {
           pickupTime: order.pickupTime,
           deliveredAt: order.deliveredAt,
           notes: order.notes,
+          driverLocation: order.driverLocation || null,
         }));
 
         dispatch({ type: "LOAD", payload: transformedOrders });
@@ -215,6 +221,7 @@ export function OrderProvider({ children }: OrderProviderProps) {
         pickupTime: order.pickupTime,
         deliveredAt: order.deliveredAt,
         notes: order.notes,
+        driverLocation: order.driverLocation || null,
       }));
 
       dispatch({ type: "LOAD", payload: transformedOrders });

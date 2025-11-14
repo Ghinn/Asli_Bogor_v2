@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
@@ -6,10 +6,12 @@ import { Label } from '../../ui/label';
 import { Textarea } from '../../ui/textarea';
 import { Badge } from '../../ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../ui/dialog';
-import { Plus, Edit, Trash, Star } from 'lucide-react';
+import { Plus, Edit, Trash, Star, Loader2, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { ImageWithFallback } from '../../figma/ImageWithFallback';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
+import { api } from '../../../config/api';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface Product {
   id: string;
@@ -25,33 +27,9 @@ interface Product {
 }
 
 export function ManajemenProduk() {
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: '1',
-      name: 'Tahu Gejrot Original',
-      price: 15000,
-      stock: 50,
-      category: 'Makanan',
-      description: 'Tahu gejrot dengan bumbu khas yang pedas dan segar',
-      image: 'https://images.unsplash.com/photo-1680345576151-bbc497ba969e?w=400',
-      sold: 234,
-      rating: 4.8,
-      status: 'active'
-    },
-    {
-      id: '2',
-      name: 'Tahu Gejrot Pedas',
-      price: 15000,
-      stock: 30,
-      category: 'Makanan',
-      description: 'Tahu gejrot dengan level kepedasan ekstra',
-      image: 'https://images.unsplash.com/photo-1680345576151-bbc497ba969e?w=400',
-      sold: 189,
-      rating: 4.9,
-      status: 'active'
-    }
-  ]);
-
+  const { user } = useAuth();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState({
@@ -62,6 +40,34 @@ export function ManajemenProduk() {
     description: '',
     image: ''
   });
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  useEffect(() => {
+    if (user && user.role === 'umkm') {
+      fetchProducts();
+    }
+  }, [user]);
+
+  const fetchProducts = async () => {
+    if (!user || user.role !== 'umkm') return;
+    
+    try {
+      setIsLoading(true);
+      const response = await fetch(api.products.getByUMKM(user.id));
+      if (!response.ok) {
+        throw new Error('Gagal mengambil data produk');
+      }
+      const data = await response.json();
+      setProducts(data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      toast.error('Gagal memuat produk');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleOpenDialog = (product?: Product) => {
     if (product) {
@@ -74,6 +80,8 @@ export function ManajemenProduk() {
         description: product.description,
         image: product.image
       });
+      setImagePreview(product.image);
+      setSelectedImage(null);
     } else {
       setEditingProduct(null);
       setFormData({
@@ -82,58 +90,200 @@ export function ManajemenProduk() {
         stock: '',
         category: '',
         description: '',
-        image: 'https://images.unsplash.com/photo-1680345576151-bbc497ba969e?w=400'
+        image: ''
       });
+      setImagePreview('');
+      setSelectedImage(null);
     }
     setIsDialogOpen(true);
   };
 
-  const handleSave = () => {
-    if (editingProduct) {
-      setProducts(products.map(p => 
-        p.id === editingProduct.id 
-          ? {
-              ...p,
-              name: formData.name,
-              price: parseFloat(formData.price),
-              stock: parseInt(formData.stock),
-              category: formData.category,
-              description: formData.description,
-              image: formData.image
-            }
-          : p
-      ));
-      toast.success('Produk berhasil diperbarui!');
-    } else {
-      const newProduct: Product = {
-        id: Date.now().toString(),
-        name: formData.name,
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock),
-        category: formData.category,
-        description: formData.description,
-        image: formData.image,
-        sold: 0,
-        rating: 0,
-        status: 'active'
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('File harus berupa gambar');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Ukuran file maksimal 5MB');
+        return;
+      }
+
+      setSelectedImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
       };
-      setProducts([...products, newProduct]);
-      toast.success('Produk berhasil ditambahkan!');
+      reader.readAsDataURL(file);
     }
-    setIsDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => {
-    setProducts(products.filter(p => p.id !== id));
-    toast.success('Produk berhasil dihapus!');
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview('');
+    setFormData({ ...formData, image: '' });
   };
 
-  const toggleStatus = (id: string) => {
-    setProducts(products.map(p => 
-      p.id === id 
-        ? { ...p, status: p.status === 'active' ? 'inactive' as const : 'active' as const }
-        : p
-    ));
+  const handleUploadImage = async (): Promise<string | null> => {
+    if (!selectedImage || !user) return null;
+
+    try {
+      setIsUploadingImage(true);
+      const formData = new FormData();
+      formData.append('productImage', selectedImage);
+      formData.append('userId', user.id);
+
+      const response = await fetch(api.upload.productImage, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Gagal mengupload gambar');
+      }
+
+      const data = await response.json();
+      toast.success('Gambar berhasil diupload');
+      return data.imageUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Gagal mengupload gambar');
+      return null;
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!user || user.role !== 'umkm') return;
+
+    try {
+      // Upload image first if there's a new image selected
+      let imageUrl = formData.image;
+      if (selectedImage) {
+        const uploadedUrl = await handleUploadImage();
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl;
+        } else {
+          // If upload fails, don't proceed
+          return;
+        }
+      }
+
+      if (editingProduct) {
+        // Update existing product
+        const response = await fetch(api.products.update(editingProduct.id), {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            price: formData.price,
+            stock: formData.stock,
+            category: formData.category,
+            description: formData.description,
+            image: imageUrl,
+            umkmId: user.id
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Gagal memperbarui produk');
+        }
+
+        toast.success('Produk berhasil diperbarui!');
+      } else {
+        // Create new product
+        const response = await fetch(api.products.create, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            price: formData.price,
+            stock: formData.stock,
+            category: formData.category,
+            description: formData.description,
+            image: imageUrl,
+            umkmId: user.id,
+            umkmName: user.name || user.storeName || 'UMKM'
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Gagal menambahkan produk');
+        }
+
+        toast.success('Produk berhasil ditambahkan!');
+      }
+
+      setIsDialogOpen(false);
+      setSelectedImage(null);
+      setImagePreview('');
+      fetchProducts(); // Refresh products list
+    } catch (error) {
+      console.error('Error saving product:', error);
+      toast.error('Gagal menyimpan produk');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(api.products.delete(id), {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Gagal menghapus produk');
+      }
+
+      toast.success('Produk berhasil dihapus!');
+      fetchProducts(); // Refresh products list
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast.error('Gagal menghapus produk');
+    }
+  };
+
+  const toggleStatus = async (id: string) => {
+    const product = products.find(p => p.id === id);
+    if (!product) return;
+
+    try {
+      const newStatus = product.status === 'active' ? 'inactive' : 'active';
+      const response = await fetch(api.products.update(id), {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: newStatus,
+          umkmId: user?.id
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Gagal mengubah status produk');
+      }
+
+      toast.success(`Produk berhasil di${newStatus === 'active' ? 'aktifkan' : 'nonaktifkan'}!`);
+      fetchProducts(); // Refresh products list
+    } catch (error) {
+      console.error('Error toggling product status:', error);
+      toast.error('Gagal mengubah status produk');
+    }
   };
 
   return (
@@ -156,8 +306,16 @@ export function ManajemenProduk() {
       </div>
 
       {/* Products Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {products.map(product => (
+      {isLoading ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Loader2 className="animate-spin mx-auto mb-4" style={{ color: '#FF8D28' }} size={48} />
+            <p style={{ color: '#858585' }}>Memuat produk...</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {products.map(product => (
           <Card key={product.id} className="overflow-hidden">
             <div className="relative">
               <ImageWithFallback
@@ -239,10 +397,11 @@ export function ManajemenProduk() {
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {products.length === 0 && (
+      {!isLoading && products.length === 0 && (
         <Card>
           <CardContent className="p-12 text-center">
             <p style={{ color: '#858585' }}>
@@ -253,7 +412,18 @@ export function ManajemenProduk() {
       )}
 
       {/* Add/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog 
+        open={isDialogOpen} 
+        onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) {
+            // Reset state when dialog closes
+            setSelectedImage(null);
+            setImagePreview('');
+            setEditingProduct(null);
+          }
+        }}
+      >
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle style={{ color: '#2F4858' }}>
@@ -323,6 +493,73 @@ export function ManajemenProduk() {
               />
             </div>
 
+            {/* Image Upload Section */}
+            <div className="space-y-2">
+              <Label className="body-3">Foto Produk *</Label>
+              <div className="space-y-3">
+                {imagePreview ? (
+                  <div className="relative">
+                    <div className="relative w-full h-48 rounded-lg overflow-hidden border-2 border-dashed border-gray-300">
+                      <ImageWithFallback
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                    {selectedImage && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        File: {selectedImage.name} ({(selectedImage.size / 1024 / 1024).toFixed(2)} MB)
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <label
+                    htmlFor="product-image"
+                    className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition-colors"
+                  >
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <ImageIcon size={48} style={{ color: '#858585' }} className="mb-2" />
+                      <p className="mb-2 text-sm" style={{ color: '#858585' }}>
+                        <span className="font-semibold">Klik untuk upload</span> atau drag & drop
+                      </p>
+                      <p className="text-xs" style={{ color: '#858585' }}>
+                        PNG, JPG, GIF (MAX. 5MB)
+                      </p>
+                    </div>
+                    <input
+                      id="product-image"
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                    />
+                  </label>
+                )}
+                {!imagePreview && (
+                  <div className="space-y-2">
+                    <p className="text-xs" style={{ color: '#858585' }}>Atau masukkan URL gambar:</p>
+                    <Input
+                      placeholder="https://example.com/image.jpg"
+                      value={formData.image}
+                      onChange={(e) => {
+                        setFormData({ ...formData, image: e.target.value });
+                        if (e.target.value) {
+                          setImagePreview(e.target.value);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="flex gap-2 pt-4">
               <Button
                 variant="outline"
@@ -335,8 +572,16 @@ export function ManajemenProduk() {
                 className="flex-1"
                 style={{ backgroundColor: '#FF8D28', color: '#FFFFFF' }}
                 onClick={handleSave}
+                disabled={isUploadingImage}
               >
-                {editingProduct ? 'Perbarui' : 'Tambah'} Produk
+                {isUploadingImage ? (
+                  <>
+                    <Loader2 className="animate-spin mr-2" size={16} />
+                    Mengupload...
+                  </>
+                ) : (
+                  `${editingProduct ? 'Perbarui' : 'Tambah'} Produk`
+                )}
               </Button>
             </div>
           </div>

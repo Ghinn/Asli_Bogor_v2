@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
-import { Wallet, TrendingUp, TrendingDown, Plus, ArrowUpRight, ArrowDownRight, CreditCard } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, Plus, ArrowUpRight, ArrowDownRight, CreditCard, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../../contexts/AuthContext';
+import { api } from '../../../config/api';
 
 interface Transaction {
   id: string;
@@ -16,61 +18,99 @@ interface Transaction {
 }
 
 export function DompetPage() {
-  const [balance] = useState(250000);
+  const { user } = useAuth();
+  const [balance, setBalance] = useState(0);
   const [topUpAmount, setTopUpAmount] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isTopUpLoading, setIsTopUpLoading] = useState(false);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  const transactions: Transaction[] = [
-    {
-      id: '1',
-      type: 'out',
-      title: 'Pembayaran Order #ORD-2024-003',
-      amount: 125000,
-      date: '15 Jan 2024',
-      status: 'completed'
-    },
-    {
-      id: '2',
-      type: 'in',
-      title: 'Top Up via Bank Transfer',
-      amount: 200000,
-      date: '14 Jan 2024',
-      status: 'completed'
-    },
-    {
-      id: '3',
-      type: 'out',
-      title: 'Pembayaran Order #ORD-2024-002',
-      amount: 20000,
-      date: '12 Jan 2024',
-      status: 'completed'
-    },
-    {
-      id: '4',
-      type: 'in',
-      title: 'Refund Order #ORD-2024-001',
-      amount: 45000,
-      date: '11 Jan 2024',
-      status: 'completed'
-    },
-    {
-      id: '5',
-      type: 'in',
-      title: 'Top Up via E-wallet',
-      amount: 150000,
-      date: '10 Jan 2024',
-      status: 'pending'
+  useEffect(() => {
+    if (user && user.role === 'user') {
+      fetchWalletData();
     }
-  ];
+  }, [user]);
+
+  const fetchWalletData = async () => {
+    if (!user) return;
+    
+    try {
+      setIsLoading(true);
+      
+      // Fetch wallet balance
+      const walletResponse = await fetch(api.wallet.getByUser(user.id));
+      if (walletResponse.ok) {
+        const walletData = await walletResponse.json();
+        setBalance(walletData.data?.balance || 0);
+      }
+      
+      // Fetch transactions
+      const transactionsResponse = await fetch(api.wallet.getTransactions(user.id));
+      if (transactionsResponse.ok) {
+        const transactionsData = await transactionsResponse.json();
+        const mappedTransactions: Transaction[] = transactionsData.data.map((t: any) => ({
+          id: t.id,
+          type: t.type === 'topup' || t.type === 'refund' ? 'in' : 'out',
+          title: t.description || (t.type === 'topup' ? 'Top Up' : t.type === 'payment' ? `Pembayaran Order ${t.orderId || ''}` : 'Refund'),
+          amount: t.amount,
+          date: new Date(t.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+          status: t.status === 'completed' ? 'completed' : 'pending'
+        }));
+        setTransactions(mappedTransactions);
+      }
+    } catch (error) {
+      console.error('Error fetching wallet data:', error);
+      toast.error('Gagal memuat data dompet');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const quickAmounts = [50000, 100000, 200000, 500000];
 
-  const handleTopUp = () => {
+  const handleTopUp = async () => {
+    if (!user) {
+      toast.error('Anda harus login terlebih dahulu');
+      return;
+    }
+    
     if (!topUpAmount || parseInt(topUpAmount) < 10000) {
       toast.error('Minimal top up Rp 10.000');
       return;
     }
-    toast.success(`Top up Rp ${parseInt(topUpAmount).toLocaleString('id-ID')} berhasil!`);
-    setTopUpAmount('');
+    
+    try {
+      setIsTopUpLoading(true);
+      const response = await fetch(api.wallet.topUp, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          amount: parseInt(topUpAmount),
+          paymentMethod: 'Transfer Bank'
+        }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Gagal melakukan top up');
+      }
+      
+      const data = await response.json();
+      setBalance(data.data?.balance || 0);
+      toast.success(`Top up Rp ${parseInt(topUpAmount).toLocaleString('id-ID')} berhasil!`);
+      setTopUpAmount('');
+      
+      // Refresh transactions
+      await fetchWalletData();
+    } catch (error: any) {
+      console.error('Error top up:', error);
+      toast.error(error.message || 'Gagal melakukan top up');
+    } finally {
+      setIsTopUpLoading(false);
+    }
   };
 
   const totalIn = transactions
@@ -80,6 +120,19 @@ export function DompetPage() {
   const totalOut = transactions
     .filter(t => t.type === 'out' && t.status === 'completed')
     .reduce((sum, t) => sum + t.amount, 0);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Loader2 className="animate-spin mx-auto mb-4" style={{ color: '#FF8D28' }} size={48} />
+            <p style={{ color: '#858585' }}>Memuat data dompet...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -197,9 +250,19 @@ export function DompetPage() {
               <Button
                 onClick={handleTopUp}
                 style={{ backgroundColor: '#4CAF50', color: '#FFFFFF' }}
+                disabled={isTopUpLoading}
               >
-                <Plus size={18} className="mr-2" />
-                Top Up
+                {isTopUpLoading ? (
+                  <>
+                    <Loader2 className="animate-spin mr-2" size={18} />
+                    Memproses...
+                  </>
+                ) : (
+                  <>
+                    <Plus size={18} className="mr-2" />
+                    Top Up
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -220,7 +283,12 @@ export function DompetPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {transactions.map((transaction, index) => (
+            {transactions.length === 0 ? (
+              <div className="text-center py-8">
+                <p style={{ color: '#858585' }}>Belum ada riwayat transaksi</p>
+              </div>
+            ) : (
+              transactions.map((transaction, index) => (
               <motion.div
                 key={transaction.id}
                 initial={{ opacity: 0, x: -20 }}
@@ -273,7 +341,8 @@ export function DompetPage() {
                   </div>
                 </div>
               </motion.div>
-            ))}
+              ))
+            )}
           </div>
         </CardContent>
       </Card>

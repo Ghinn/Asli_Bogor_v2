@@ -20,39 +20,8 @@ interface WishlistItem {
 }
 
 export function WishlistPage() {
-  const [wishlist, setWishlist] = useState<WishlistItem[]>([
-    {
-      id: '1',
-      name: 'Tahu Gejrot Original',
-      price: 15000,
-      image: 'https://images.unsplash.com/photo-1680345576151-bbc497ba969e?w=400',
-      store: 'Tahu Gejrot Pak Haji',
-      rating: 4.8,
-      sold: 1234,
-      category: 'Makanan'
-    },
-    {
-      id: '2',
-      name: 'Anyaman Bambu',
-      price: 75000,
-      originalPrice: 100000,
-      image: 'https://images.unsplash.com/photo-1575277340549-70f2441dee09?w=400',
-      store: 'Kerajinan Bambu Ibu Siti',
-      rating: 4.6,
-      sold: 234,
-      category: 'Kerajinan'
-    },
-    {
-      id: '3',
-      name: 'Kopi Robusta Bogor',
-      price: 25000,
-      image: 'https://images.unsplash.com/photo-1762592957827-99db60cfd0c7?w=400',
-      store: 'Kopi Kenangan Bogor',
-      rating: 4.9,
-      sold: 1543,
-      category: 'Minuman'
-    }
-  ]);
+  // User baru TIDAK memiliki data favorit sama sekali - array kosong
+  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
 
   const handleRemove = (id: string, name: string) => {
     setWishlist(wishlist.filter(item => item.id !== id));
@@ -98,9 +67,9 @@ export function WishlistPage() {
             >
               <Heart size={32} style={{ color: '#FF8D28' }} />
             </div>
-            <h3 style={{ color: '#2F4858' }}>Wishlist Kosong</h3>
+            <h3 style={{ color: '#2F4858' }}>Belum Ada Produk Favorit</h3>
             <p className="body-3 mt-2 mb-6" style={{ color: '#858585' }}>
-              Belum ada produk yang Anda simpan. Yuk mulai berbelanja!
+              Belum ada produk favorit. Tambahkan produk ke favorit dengan menekan tombol "Tambah ke Favorit" pada produk yang Anda sukai.
             </p>
             <Button style={{ backgroundColor: '#FF8D28', color: '#FFFFFF' }}>
               Mulai Belanja

@@ -71,7 +71,8 @@ export function DashboardLayout({ children, activeMenu, onMenuChange }: Dashboar
         return [
           { id: 'beranda', label: 'Beranda', icon: Store },
           { id: 'keranjang', label: 'Keranjang', icon: ShoppingCart },
-          { id: 'wishlist', label: 'Favorit Saya', icon: Heart },
+          // Menu "Favorit Saya" disembunyikan sementara sesuai requirement
+          // { id: 'wishlist', label: 'Favorit Saya', icon: Heart },
           { id: 'pesanan', label: 'Pesanan Saya', icon: Package },
           { id: 'tracking', label: 'Tracking Pesanan', icon: TrendingUp },
           { id: 'dompet', label: 'Dompet Saya', icon: Wallet },

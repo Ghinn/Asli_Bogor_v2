@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent } from "../../ui/card";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
@@ -6,6 +6,7 @@ import { MapPin, Package, Clock, Navigation, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { useOrderContext } from "../../../contexts/OrderContext";
 import { useAuth } from "../../../contexts/AuthContext";
+import { api } from "../../../config/api";
 
 export function OrderAktif() {
   const { user } = useAuth();
@@ -51,11 +52,89 @@ export function OrderAktif() {
         pickupTime: new Date().toISOString(),
       });
       toast.success("Order diterima! Segera menuju lokasi penjemputan.");
+      
+      // Start location tracking for this order
+      startLocationTracking(orderId);
+      
       // Refresh orders untuk mendapatkan data terbaru
       await refreshOrders();
     } catch (error: any) {
       toast.error(error.message || 'Gagal menerima order');
     }
+  };
+
+  // Simulate driver location updates
+  const startLocationTracking = async (orderId: string) => {
+    if (!user) return;
+
+    // Wait a bit for order to be updated in context
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Refresh orders to get latest data
+    await refreshOrders();
+    
+    // Get order from all orders (might not be in availableOrders yet)
+    const order = orders.find(o => o.id === orderId);
+    if (!order) {
+      console.error('Order not found:', orderId);
+      return;
+    }
+
+    // Helper function to geocode address to coordinates
+    const geocodeAddress = (address: string): { lat: number; lng: number } => {
+      if (address.includes('Suryakencana')) {
+        return { lat: -6.5950, lng: 106.8000 };
+      }
+      if (address.includes('Pajajaran')) {
+        return { lat: -6.6000, lng: 106.8100 };
+      }
+      return { lat: -6.5978, lng: 106.8067 }; // Default Bogor
+    };
+
+    const storeCoords = geocodeAddress(order.storeAddress);
+    const deliveryCoords = geocodeAddress(order.deliveryAddress);
+
+    let progress = 0;
+    const duration = 60000; // 60 seconds for full journey (more realistic)
+    const startTime = Date.now();
+
+    const updateLocation = async () => {
+      const elapsed = Date.now() - startTime;
+      progress = Math.min(1, elapsed / duration);
+
+      // Calculate current location using linear interpolation
+      const currentLat = storeCoords.lat + (deliveryCoords.lat - storeCoords.lat) * progress;
+      const currentLng = storeCoords.lng + (deliveryCoords.lng - storeCoords.lng) * progress;
+
+      // Update location via API
+      try {
+        const response = await fetch(api.orders.updateDriverLocation(orderId), {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            lat: currentLat,
+            lng: currentLng,
+            driverId: user.id,
+          }),
+        });
+
+        if (!response.ok) {
+          console.error('Failed to update driver location');
+        }
+      } catch (error) {
+        console.error('Error updating driver location:', error);
+      }
+
+      // Continue updating until journey is complete
+      if (progress < 1) {
+        setTimeout(updateLocation, 3000); // Update every 3 seconds
+      }
+    };
+
+    // Start tracking after a short delay
+    setTimeout(updateLocation, 1000);
   };
 
   const handleCompleteOrder = async (orderId: string) => {

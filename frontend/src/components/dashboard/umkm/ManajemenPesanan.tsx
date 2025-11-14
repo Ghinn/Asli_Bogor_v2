@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import type { Order, OrderStatus } from "../../../contexts/OrderContext";
 import { useOrderContext } from "../../../contexts/OrderContext";
 import { useAuth } from "../../../contexts/AuthContext";
+import { api } from "../../../config/api";
 
 export function ManajemenPesanan() {
   const { user } = useAuth();
@@ -55,8 +56,27 @@ export function ManajemenPesanan() {
   };
 
   const handleStatusChange = async (orderId: string, nextStatus: OrderStatus) => {
+    if (!user) return;
+    
     try {
-      await updateOrderStatus(orderId, nextStatus);
+      // Use tracking endpoint for UMKM to update order status
+      const response = await fetch(api.orders.updateTracking(orderId), {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: nextStatus,
+          umkmId: user.id,
+          trackingNumber: nextStatus === 'ready' ? `TRK-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}` : undefined
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Gagal update status pesanan');
+      }
+
       toast.success(statusMessages[nextStatus]);
       // Refresh orders untuk mendapatkan data terbaru
       await refreshOrders();
@@ -104,8 +124,18 @@ export function ManajemenPesanan() {
                   {order.userName}
                 </p>
                 <p className="body-3" style={{ color: "#858585", fontSize: "12px" }}>
-                  {order.paymentMethod?.toUpperCase()} • {order.items.length} menu
+                  {order.paymentMethod?.toUpperCase() || 'Belum dibayar'} • {order.items.length} menu
                 </p>
+                {order.paymentStatus === 'paid' && (
+                  <Badge style={{ backgroundColor: '#D4EDDA', color: '#155724', marginTop: '4px', fontSize: '10px' }}>
+                    Sudah Dibayar
+                  </Badge>
+                )}
+                {order.paymentStatus === 'pending' && (
+                  <Badge style={{ backgroundColor: '#FFF3CD', color: '#856404', marginTop: '4px', fontSize: '10px' }}>
+                    Menunggu Pembayaran
+                  </Badge>
+                )}
               </div>
               <Button variant="ghost" size="sm" style={{ color: "#2196F3" }}>
                 <Phone size={16} />

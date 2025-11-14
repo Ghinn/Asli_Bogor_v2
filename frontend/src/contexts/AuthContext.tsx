@@ -14,6 +14,7 @@ export interface User {
   phone?: string;
   address?: string;
   description?: string;
+  storeName?: string;
 }
 
 interface RegisterData {
@@ -68,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         phone: data.user.phone,
         address: data.user.address,
         description: data.user.description,
+        storeName: data.user.storeName,
       });
     } catch (error: any) {
       console.error('Login error:', error);

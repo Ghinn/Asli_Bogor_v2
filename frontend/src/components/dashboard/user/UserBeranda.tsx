@@ -1,93 +1,68 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Badge } from '../../ui/badge';
-import { Search, Heart, ShoppingCart, Star } from 'lucide-react';
+import { Search, Heart, ShoppingCart, Star, Loader2 } from 'lucide-react';
 import { ImageWithFallback } from '../../figma/ImageWithFallback';
 import { toast } from 'sonner';
 import { PersonalizedGreeting } from '../../PersonalizedGreeting';
 import { GamificationBadge } from '../../GamificationBadge';
+import { api } from '../../../config/api';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface Product {
   id: string;
   name: string;
   price: number;
   image: string;
-  store: string;
+  umkmName: string;
   rating: number;
   sold: number;
   category: string;
 }
 
 export function UserBeranda() {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('Semua');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [addingToCart, setAddingToCart] = useState<string | null>(null);
 
   const categories = ['Semua', 'Makanan', 'Minuman', 'Kerajinan', 'Jasa'];
 
-  const products: Product[] = [
-    {
-      id: '1',
-      name: 'Tahu Gejrot Original',
-      price: 15000,
-      image: 'https://images.unsplash.com/photo-1680345576151-bbc497ba969e?w=400',
-      store: 'Tahu Gejrot Pak Haji',
-      rating: 4.8,
-      sold: 1234,
-      category: 'Makanan'
-    },
-    {
-      id: '2',
-      name: 'Makaroni Ngehe Pedas',
-      price: 20000,
-      image: 'https://images.unsplash.com/photo-1680345576151-bbc497ba969e?w=400',
-      store: 'Makaroni Ngehe',
-      rating: 4.9,
-      sold: 2156,
-      category: 'Makanan'
-    },
-    {
-      id: '3',
-      name: 'Es Pala Segar',
-      price: 12000,
-      image: 'https://images.unsplash.com/photo-1762592957827-99db60cfd0c7?w=400',
-      store: 'Es Pala Pak Sahak',
-      rating: 4.7,
-      sold: 987,
-      category: 'Minuman'
-    },
-    {
-      id: '4',
-      name: 'Kopi Robusta Bogor',
-      price: 25000,
-      image: 'https://images.unsplash.com/photo-1762592957827-99db60cfd0c7?w=400',
-      store: 'Kopi Kenangan Bogor',
-      rating: 4.9,
-      sold: 1543,
-      category: 'Minuman'
-    },
-    {
-      id: '5',
-      name: 'Anyaman Bambu',
-      price: 75000,
-      image: 'https://images.unsplash.com/photo-1575277340549-70f2441dee09?w=400',
-      store: 'Kerajinan Bambu Ibu Siti',
-      rating: 4.6,
-      sold: 234,
-      category: 'Kerajinan'
-    },
-    {
-      id: '6',
-      name: 'Batik Motif Bogor',
-      price: 150000,
-      image: 'https://images.unsplash.com/photo-1575277340549-70f2441dee09?w=400',
-      store: 'Batik Bogor Tradisiku',
-      rating: 4.8,
-      sold: 456,
-      category: 'Kerajinan'
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(api.products.getAll);
+      if (!response.ok) {
+        throw new Error('Gagal mengambil data produk');
+      }
+      const data = await response.json();
+      // Map API response to Product interface
+      const mappedProducts: Product[] = data.map((product: any) => ({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        umkmName: product.umkmName || 'UMKM',
+        rating: product.rating || 0,
+        sold: product.sold || 0,
+        category: product.category
+      }));
+      setProducts(mappedProducts);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      toast.error('Gagal memuat produk. Silakan refresh halaman.');
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -95,8 +70,38 @@ export function UserBeranda() {
     return matchesSearch && matchesCategory;
   });
 
-  const handleAddToCart = (productName: string) => {
-    toast.success(`${productName} ditambahkan ke keranjang!`);
+  const handleAddToCart = async (product: Product) => {
+    if (!user) {
+      toast.error('Anda harus login terlebih dahulu');
+      return;
+    }
+
+    try {
+      setAddingToCart(product.id);
+      const response = await fetch(api.cart.add, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          productId: product.id,
+          quantity: 1
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Gagal menambahkan ke keranjang');
+      }
+
+      toast.success(`${product.name} ditambahkan ke keranjang!`);
+    } catch (error: any) {
+      console.error('Error adding to cart:', error);
+      toast.error(error.message || 'Gagal menambahkan ke keranjang');
+    } finally {
+      setAddingToCart(null);
+    }
   };
 
   const handleAddToWishlist = (productName: string) => {
@@ -163,8 +168,16 @@ export function UserBeranda() {
       </Card>
 
       {/* Products Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProducts.map(product => (
+      {isLoading ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Loader2 className="animate-spin mx-auto mb-4" style={{ color: '#FF8D28' }} size={48} />
+            <p style={{ color: '#858585' }}>Memuat produk...</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProducts.map(product => (
           <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
             <div className="relative">
               <ImageWithFallback
@@ -190,7 +203,7 @@ export function UserBeranda() {
                 {product.name}
               </h4>
               <p className="body-3 mb-2" style={{ color: '#858585' }}>
-                {product.store}
+                {product.umkmName}
               </p>
               <div className="flex items-center gap-2 mb-3">
                 <div className="flex items-center gap-1">
@@ -207,18 +220,29 @@ export function UserBeranda() {
                 <Button
                   size="sm"
                   style={{ backgroundColor: '#FF8D28', color: '#FFFFFF' }}
-                  onClick={() => handleAddToCart(product.name)}
+                  onClick={() => handleAddToCart(product)}
+                  disabled={addingToCart === product.id}
                 >
-                  <ShoppingCart size={16} className="mr-1" />
-                  Beli
+                  {addingToCart === product.id ? (
+                    <>
+                      <Loader2 className="animate-spin mr-1" size={16} />
+                      Menambah...
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart size={16} className="mr-1" />
+                      Beli
+                    </>
+                  )}
                 </Button>
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {filteredProducts.length === 0 && (
+      {!isLoading && filteredProducts.length === 0 && (
         <Card>
           <CardContent className="p-12 text-center">
             <p style={{ color: '#858585' }}>

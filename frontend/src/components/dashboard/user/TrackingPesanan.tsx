@@ -1,12 +1,47 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Badge } from '../../ui/badge';
 import { Package, MapPin, Check, Bike, Store, Clock } from 'lucide-react';
 import { useOrders } from '../../../contexts/OrderContext';
 import type { OrderStatus } from '../../../contexts/OrderContext';
+import { TrackingMap } from './TrackingMap';
+import { api } from '../../../config/api';
 
 export function TrackingPesanan() {
   const orders = useOrders();
+  const [orderLocations, setOrderLocations] = useState<Record<string, { lat: number; lng: number; updatedAt: string }>>({});
+
+  // Fetch driver locations for active orders
+  useEffect(() => {
+    const fetchDriverLocations = async () => {
+      const activeOrders = orders.filter(order => 
+        (order.status === 'pickup' || order.status === 'delivered') && order.driverId
+      );
+
+      for (const order of activeOrders) {
+        try {
+          const response = await fetch(api.orders.getById(order.id));
+          if (response.ok) {
+            const data = await response.json();
+            if (data.data?.driverLocation) {
+              setOrderLocations(prev => ({
+                ...prev,
+                [order.id]: data.data.driverLocation
+              }));
+            }
+          }
+        } catch (error) {
+          console.error(`Error fetching location for order ${order.id}:`, error);
+        }
+      }
+    };
+
+    fetchDriverLocations();
+    
+    // Refresh locations every 3 seconds for active deliveries
+    const interval = setInterval(fetchDriverLocations, 3000);
+    return () => clearInterval(interval);
+  }, [orders]);
 
   // Map order status ke tracking status
   const mapOrderStatus = (status: OrderStatus): 'preparing' | 'pickup' | 'delivering' | 'delivered' => {
@@ -160,10 +195,12 @@ export function TrackingPesanan() {
         orderNumber: order.id,
         items: order.items.map(item => `${item.name} (${item.quantity}x)`),
         store: order.storeName,
+        storeAddress: order.storeAddress,
         driver: order.driverName || undefined,
         status: mapOrderStatus(order.status),
         timeline: getTimeline(order),
-        address: order.deliveryAddress
+        address: order.deliveryAddress,
+        driverLocation: orderLocations[order.id] || null
       }))
       .sort((a, b) => {
         // Sort by newest first
@@ -172,7 +209,7 @@ export function TrackingPesanan() {
         if (!orderA || !orderB) return 0;
         return new Date(orderB.createdAt).getTime() - new Date(orderA.createdAt).getTime();
       });
-  }, [orders]);
+  }, [orders, orderLocations]);
 
   return (
     <div className="space-y-6">
@@ -217,28 +254,26 @@ export function TrackingPesanan() {
               <div className="space-y-6">
                 <div>
                   <h4 style={{ color: '#2F4858' }} className="mb-4">
-                    Peta Pengiriman
+                    Peta Pengiriman Real-Time
                   </h4>
-                  <div 
-                    className="w-full h-64 rounded-lg flex items-center justify-center"
-                    style={{ backgroundColor: '#F5F5F5' }}
-                  >
-                    {order.status === 'delivering' || order.status === 'pickup' ? (
-                      <div className="text-center">
-                        <MapPin size={48} style={{ color: '#FF8D28', margin: '0 auto' }} />
-                        <p className="body-3 mt-2" style={{ color: '#858585' }}>
-                          Peta tracking lokasi driver real-time
-                        </p>
-                        <p className="body-3" style={{ color: '#FF8D28', fontWeight: 600 }}>
-                          🏍️ Driver sedang dalam perjalanan
-                        </p>
-                      </div>
-                    ) : (
+                  {order.status === 'delivering' || order.status === 'pickup' ? (
+                    <TrackingMap
+                      orderId={order.id}
+                      storeAddress={order.storeAddress || 'Bogor, Jawa Barat'}
+                      deliveryAddress={order.address}
+                      driverLocation={order.driverLocation}
+                      status={order.status}
+                    />
+                  ) : (
+                    <div 
+                      className="w-full h-64 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: '#F5F5F5' }}
+                    >
                       <p className="body-3" style={{ color: '#858585' }}>
                         Peta akan aktif saat driver mengambil pesanan
                       </p>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
 
                 <div>

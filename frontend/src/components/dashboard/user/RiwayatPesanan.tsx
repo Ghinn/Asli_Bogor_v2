@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs';
-import { Package, Truck, CheckCircle, XCircle, Star, Eye } from 'lucide-react';
+import { Package, Truck, CheckCircle, XCircle, Star, Eye, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../../contexts/AuthContext';
+import { api } from '../../../config/api';
+import { toast } from 'sonner';
 
 interface Order {
   id: string;
@@ -12,61 +15,74 @@ interface Order {
   date: string;
   items: { name: string; qty: number; price: number }[];
   total: number;
-  status: 'pending' | 'processing' | 'shipping' | 'completed' | 'cancelled';
+  status: 'pending' | 'processing' | 'shipping' | 'completed' | 'cancelled' | 'preparing' | 'ready' | 'pickup' | 'delivered';
   store: string;
+  paymentStatus?: 'pending' | 'paid' | 'failed';
+  paymentMethod?: string;
 }
 
 export function RiwayatPesanan() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('all');
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const orders: Order[] = [
-    {
-      id: '1',
-      orderNumber: 'ORD-2024-001',
-      date: '10 Jan 2024',
-      items: [
-        { name: 'Tahu Gejrot Original', qty: 2, price: 15000 },
-        { name: 'Es Pala Segar', qty: 1, price: 12000 }
-      ],
-      total: 42000,
-      status: 'completed',
-      store: 'Tahu Gejrot Pak Haji'
-    },
-    {
-      id: '2',
-      orderNumber: 'ORD-2024-002',
-      date: '12 Jan 2024',
-      items: [
-        { name: 'Makaroni Ngehe Pedas', qty: 1, price: 20000 }
-      ],
-      total: 20000,
-      status: 'shipping',
-      store: 'Makaroni Ngehe'
-    },
-    {
-      id: '3',
-      orderNumber: 'ORD-2024-003',
-      date: '15 Jan 2024',
-      items: [
-        { name: 'Kopi Robusta Bogor', qty: 2, price: 25000 },
-        { name: 'Anyaman Bambu', qty: 1, price: 75000 }
-      ],
-      total: 125000,
-      status: 'processing',
-      store: 'Kopi Kenangan Bogor'
-    },
-    {
-      id: '4',
-      orderNumber: 'ORD-2024-004',
-      date: '08 Jan 2024',
-      items: [
-        { name: 'Batik Motif Bogor', qty: 1, price: 150000 }
-      ],
-      total: 150000,
-      status: 'cancelled',
-      store: 'Batik Bogor Tradisiku'
+  useEffect(() => {
+    if (user && user.role === 'user') {
+      fetchOrders();
     }
-  ];
+  }, [user]);
+
+  const fetchOrders = async () => {
+    if (!user) return;
+    
+    try {
+      setIsLoading(true);
+      const response = await fetch(`${api.orders.getAll}?userId=${user.id}`);
+      if (!response.ok) {
+        throw new Error('Gagal mengambil data pesanan');
+      }
+      const data = await response.json();
+      const mappedOrders: Order[] = data.data.map((order: any) => ({
+        id: order.id,
+        orderNumber: order.id,
+        date: new Date(order.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+        items: order.items.map((item: any) => ({
+          name: item.name,
+          qty: item.quantity,
+          price: item.price
+        })),
+        total: order.total,
+        status: mapOrderStatus(order.status),
+        store: order.storeName,
+        paymentStatus: order.paymentStatus,
+        paymentMethod: order.paymentMethod
+      }));
+      setOrders(mappedOrders);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      toast.error('Gagal memuat riwayat pesanan');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const mapOrderStatus = (status: string): Order['status'] => {
+    switch (status) {
+      case 'preparing':
+        return 'processing';
+      case 'ready':
+        return 'processing';
+      case 'pickup':
+        return 'shipping';
+      case 'delivered':
+        return 'shipping';
+      case 'completed':
+        return 'completed';
+      default:
+        return 'pending';
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -109,8 +125,24 @@ export function RiwayatPesanan() {
 
   const filteredOrders = orders.filter(order => {
     if (activeTab === 'all') return true;
+    if (activeTab === 'pending') {
+      return order.status === 'pending' || order.paymentStatus === 'pending';
+    }
     return order.status === activeTab;
   });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Loader2 className="animate-spin mx-auto mb-4" style={{ color: '#FF8D28' }} size={48} />
+            <p style={{ color: '#858585' }}>Memuat riwayat pesanan...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -122,7 +154,7 @@ export function RiwayatPesanan() {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-6 mb-6">
               <TabsTrigger value="all">Semua</TabsTrigger>
-              <TabsTrigger value="pending">Menunggu</TabsTrigger>
+              <TabsTrigger value="pending">Menunggu Pembayaran</TabsTrigger>
               <TabsTrigger value="processing">Diproses</TabsTrigger>
               <TabsTrigger value="shipping">Dikirim</TabsTrigger>
               <TabsTrigger value="completed">Selesai</TabsTrigger>
@@ -161,17 +193,29 @@ export function RiwayatPesanan() {
                               {order.date} • {order.store}
                             </p>
                           </div>
-                          <Badge
-                            style={{
-                              backgroundColor: getStatusColor(order.status).bg,
-                              color: getStatusColor(order.status).text
-                            }}
-                          >
-                            <span className="flex items-center gap-1">
-                              {getStatusIcon(order.status)}
-                              {getStatusLabel(order.status)}
-                            </span>
-                          </Badge>
+                          <div className="flex flex-col items-end gap-2">
+                            <Badge
+                              style={{
+                                backgroundColor: getStatusColor(order.status).bg,
+                                color: getStatusColor(order.status).text
+                              }}
+                            >
+                              <span className="flex items-center gap-1">
+                                {getStatusIcon(order.status)}
+                                {getStatusLabel(order.status)}
+                              </span>
+                            </Badge>
+                            {order.paymentStatus === 'pending' && (
+                              <Badge style={{ backgroundColor: '#FFF3CD', color: '#856404' }}>
+                                Menunggu Pembayaran
+                              </Badge>
+                            )}
+                            {order.paymentStatus === 'paid' && (
+                              <Badge style={{ backgroundColor: '#D4EDDA', color: '#155724' }}>
+                                Sudah Dibayar
+                              </Badge>
+                            )}
+                          </div>
                         </div>
 
                         {/* Items */}
