@@ -50,13 +50,19 @@
     "paymentMethod": "dana",
     "paymentStatus": "paid",
     "notes": null,
-    "status": "preparing",
-    "driverId": null,
-    "driverName": null,
-    "trackingNumber": null,
+    "status": "pickup",
+    "driverId": "b810ab93-a439-425e-a993-530d129bee21",
+    "driverName": "driver1",
+    "trackingNumber": "TRK-1763140808615-6M0Z3S",
     "createdAt": "2025-11-14T12:11:07.659Z",
-    "updatedAt": "2025-11-14T12:11:09.419Z",
-    "paidAt": "2025-11-14T12:11:09.416Z"
+    "updatedAt": "2025-11-14T17:21:31.836Z",
+    "paidAt": "2025-11-14T12:11:09.416Z",
+    "pickupTime": "2025-11-14T17:20:30.279Z",
+    "driverLocation": {
+      "lat": -6.6,
+      "lng": 106.81,
+      "updatedAt": "2025-11-14T17:21:31.835Z"
+    }
   },
   {
     "id": "ORD-1763122302171-EK377KS28",
@@ -87,13 +93,20 @@
     "paymentMethod": "wallet",
     "paymentStatus": "paid",
     "notes": null,
-    "status": "preparing",
-    "driverId": null,
-    "driverName": null,
-    "trackingNumber": null,
+    "status": "delivered",
+    "driverId": "b810ab93-a439-425e-a993-530d129bee21",
+    "driverName": "driver1",
+    "trackingNumber": "TRK-1763140216767-2M0L1P",
     "createdAt": "2025-11-14T12:11:42.171Z",
-    "updatedAt": "2025-11-14T12:11:42.252Z",
-    "paidAt": "2025-11-14T12:11:42.250Z"
+    "updatedAt": "2025-11-14T17:15:33.851Z",
+    "paidAt": "2025-11-14T12:11:42.250Z",
+    "pickupTime": "2025-11-14T17:14:32.692Z",
+    "driverLocation": {
+      "lat": -6.6,
+      "lng": 106.81,
+      "updatedAt": "2025-11-14T17:15:33.849Z"
+    },
+    "deliveredAt": "2025-11-14T17:14:38.263Z"
   },
   {
     "id": "ORD-1763132276114-PTC6F4MXU",
@@ -277,5 +290,43 @@
       "updatedAt": "2025-11-14T16:01:13.236Z"
     },
     "deliveredAt": "2025-11-14T16:04:17.139Z"
+  },
+  {
+    "id": "ORD-1763140748814-Z95BCI2PS",
+    "userId": "af3583a6-707b-4d54-b235-114208187f28",
+    "userName": "Wuliddah Tamsil",
+    "userEmail": "wuliddahtamsilbarokah19@gmail.com",
+    "umkmId": "4fb06afa-fd54-4d28-aace-d40af516f40a",
+    "storeName": "Lapis Bogor Sangkuriang",
+    "storeAddress": "Bogor, Jawa Barat",
+    "items": [
+      {
+        "id": "lapis-talas-original-001",
+        "name": "Lapis Talas Original",
+        "quantity": 3,
+        "price": 45000
+      }
+    ],
+    "subtotal": 135000,
+    "deliveryFee": 10000,
+    "total": 145000,
+    "deliveryAddress": "Jl. Pajajaran No. 45, Bogor",
+    "paymentMethod": "qris",
+    "paymentStatus": "paid",
+    "notes": null,
+    "status": "delivered",
+    "driverId": "b810ab93-a439-425e-a993-530d129bee21",
+    "driverName": "driver1",
+    "trackingNumber": "TRK-1763140978760-814TYI",
+    "createdAt": "2025-11-14T17:19:08.815Z",
+    "updatedAt": "2025-11-14T17:24:41.801Z",
+    "paidAt": "2025-11-14T17:19:10.578Z",
+    "pickupTime": "2025-11-14T17:23:25.594Z",
+    "driverLocation": {
+      "lat": -6.6,
+      "lng": 106.81,
+      "updatedAt": "2025-11-14T17:24:28.834Z"
+    },
+    "deliveredAt": "2025-11-14T17:24:41.790Z"
   }
 ]

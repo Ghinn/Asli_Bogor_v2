@@ -10,6 +10,7 @@ import notificationsRoutes from './routes/notifications.js';
 import productsRoutes from './routes/products.js';
 import cartRoutes from './routes/cart.js';
 import walletRoutes from './routes/wallet.js';
+import contentRoutes from './routes/content.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -52,6 +53,7 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/wallet', walletRoutes);
+app.use('/api/content', contentRoutes);
 
 // Serve uploaded files
 app.use('/uploads', express.static('uploads'));

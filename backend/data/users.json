@@ -703,5 +703,23 @@
     "storeName": "Bir Kotjok Si Abah",
     "storeAddress": "Jl. Suryakencana No.291, RT.02/RW.06, Gudang, Kecamatan Bogor Tengah, Kota Bogor",
     "storeDescription": "Sebuah UMKM minuman legendaris dan unik di area Suryakencana. Penting dicatat, ini 100% non-alkohol. \"Bir Kotjok\" adalah minuman tradisional Bogor yang terbuat dari jahe, kayu manis, cengkeh, dan rempah-rempah lain yang \"dikocok\" hingga berbusa. Minuman ini menyehatkan, menghangatkan, dan sangat khas."
+  },
+  {
+    "id": "813168ad-418d-4c20-b0b2-077769028026",
+    "name": "Budi",
+    "email": "budi@gmail.com",
+    "password": "$2a$10$aTRDVQCxu2HV9XCQutA56eK0/EqQW8Mj74FeBSx1CTFrhO/gDahn.",
+    "role": "user",
+    "phone": null,
+    "address": null,
+    "description": null,
+    "status": "active",
+    "isVerified": true,
+    "isOnboarded": true,
+    "joinDate": "2025-11-14",
+    "totalOrders": 0,
+    "rating": 0,
+    "createdAt": "2025-11-14T19:00:49.687Z",
+    "updatedAt": "2025-11-14T19:00:49.687Z"
   }
 ]
