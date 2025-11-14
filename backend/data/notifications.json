@@ -243,5 +243,65 @@
     "status": "completed",
     "read": false,
     "createdAt": "2025-11-13T10:41:04.021Z"
+  },
+  {
+    "id": "fc3411a4-56ab-46d4-a855-986637e8fd3e",
+    "userId": "effd7fde-ffc8-4495-8b06-5b9d21aaae81",
+    "type": "order",
+    "title": "Pesanan Baru! 🎉",
+    "message": "Pesanan baru dari Wuliddah Tamsil - Total: Rp 110.000",
+    "orderId": "ORD-1763115154047-93NIAYUO5",
+    "status": "pending",
+    "read": true,
+    "createdAt": "2025-11-14T10:12:34.319Z",
+    "readAt": "2025-11-14T12:36:09.956Z"
+  },
+  {
+    "id": "ba2060e5-a411-41e8-b162-1964e8fbd338",
+    "userId": "effd7fde-ffc8-4495-8b06-5b9d21aaae81",
+    "type": "order",
+    "title": "Pesanan Baru! 🎉",
+    "message": "Pesanan baru dari Wuliddah Tamsil - Total: Rp 50.000",
+    "orderId": "ORD-1763122267659-YB9CAZE9W",
+    "status": "pending",
+    "read": true,
+    "createdAt": "2025-11-14T12:11:07.866Z",
+    "readAt": "2025-11-14T12:36:09.957Z"
+  },
+  {
+    "id": "5745311b-0625-48fc-9ec2-cddc804b608b",
+    "userId": "effd7fde-ffc8-4495-8b06-5b9d21aaae81",
+    "type": "order",
+    "title": "Pembayaran Diterima! 💰",
+    "message": "Pembayaran order ORD-1763122267659-YB9CAZE9W telah diterima - Rp 50.000",
+    "orderId": "ORD-1763122267659-YB9CAZE9W",
+    "status": "processing",
+    "read": true,
+    "createdAt": "2025-11-14T12:11:09.425Z",
+    "readAt": "2025-11-14T12:36:09.957Z"
+  },
+  {
+    "id": "06351d3e-4702-4ecd-8a57-6f3516bc0be2",
+    "userId": "effd7fde-ffc8-4495-8b06-5b9d21aaae81",
+    "type": "order",
+    "title": "Pesanan Baru! 🎉",
+    "message": "Pesanan baru dari Wuliddah Tamsil - Total: Rp 130.000",
+    "orderId": "ORD-1763122302171-EK377KS28",
+    "status": "pending",
+    "read": true,
+    "createdAt": "2025-11-14T12:11:42.179Z",
+    "readAt": "2025-11-14T12:36:09.957Z"
+  },
+  {
+    "id": "044ebd3d-bda7-484b-9714-68c4d7d3fa33",
+    "userId": "effd7fde-ffc8-4495-8b06-5b9d21aaae81",
+    "type": "order",
+    "title": "Pembayaran Diterima! 💰",
+    "message": "Pembayaran order ORD-1763122302171-EK377KS28 telah diterima - Rp 130.000",
+    "orderId": "ORD-1763122302171-EK377KS28",
+    "status": "processing",
+    "read": true,
+    "createdAt": "2025-11-14T12:11:42.257Z",
+    "readAt": "2025-11-14T12:36:09.957Z"
   }
 ]

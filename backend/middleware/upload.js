@@ -9,9 +9,15 @@ const __dirname = dirname(__filename);
 // Konfigurasi storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Tentukan folder berdasarkan route (driver atau umkm)
-    const route = req.path.includes('/driver') ? 'driver' : 
-                  req.path.includes('/umkm') ? 'umkm' : 'general';
+    // Tentukan folder berdasarkan route (driver, umkm, atau products)
+    let route = 'general';
+    if (req.path.includes('/driver')) {
+      route = 'driver';
+    } else if (req.path.includes('/umkm')) {
+      route = 'umkm';
+    } else if (req.path.includes('/products')) {
+      route = 'products';
+    }
     const uploadPath = join(__dirname, '../uploads', route);
     
     // Buat folder jika belum ada
@@ -64,4 +70,7 @@ export const uploadUMKMDocs = upload.fields([
   { name: 'storePhotoFile', maxCount: 1 },
   { name: 'businessPermitFile', maxCount: 1 }
 ]);
+
+// Middleware untuk upload gambar produk
+export const uploadProductImage = upload.single('productImage');
 

@@ -97,3 +97,25 @@ export const uploadUMKMDocuments = async (req, res) => {
   }
 };
 
+export const uploadProductImageController = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'File gambar diperlukan' });
+    }
+
+    // Get relative path untuk URL
+    const imagePath = getRelativePath(req.file.path);
+    const imageUrl = `http://localhost:3000/${imagePath}`;
+
+    res.json({
+      success: true,
+      message: 'Gambar produk berhasil diupload',
+      imageUrl: imageUrl,
+      imagePath: imagePath
+    });
+  } catch (error) {
+    console.error('Upload product image error:', error);
+    res.status(500).json({ error: 'Terjadi kesalahan saat upload gambar' });
+  }
+};
+

@@ -13,6 +13,8 @@ import {
   saveNotification as saveNotificationModel
 } from '../models/notificationModel.js';
 import { getUserById, getAllUsers as getAllUsersModel } from '../models/userModel.js';
+import { getWalletByUserId, updateWalletBalance } from '../models/walletModel.js';
+import { createTransaction } from '../models/walletTransactionModel.js';
 
 // Get all orders (with filters)
 export const getAllOrders = async (req, res) => {
@@ -136,10 +138,12 @@ export const createOrder = async (req, res) => {
       total,
       deliveryAddress,
       paymentMethod: paymentMethod || 'cash',
+      paymentStatus: 'pending', // pending, paid, failed
       notes: notes || null,
       status: 'preparing', // preparing -> ready -> pickup -> delivered -> completed
       driverId: null,
       driverName: null,
+      trackingNumber: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -234,6 +238,12 @@ export const updateOrderStatus = async (req, res) => {
         updateData.driverId = driverId;
         updateData.driverName = driver.name;
         updateData.pickupTime = new Date().toISOString();
+        // Set initial driver location to store location (will be updated by driver)
+        updateData.driverLocation = {
+          lat: -6.5978, // Default Bogor coordinates
+          lng: 106.8067,
+          updatedAt: new Date().toISOString()
+        };
 
         // Notifikasi untuk UMKM
         await saveNotificationModel({
@@ -308,6 +318,208 @@ export const updateOrderStatus = async (req, res) => {
       error: 'Terjadi kesalahan saat update status order',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
+  }
+};
+
+// Process payment
+export const processPayment = async (req, res) => {
+  try {
+    const { orderId, paymentMethod, userId } = req.body;
+
+    if (!orderId || !paymentMethod || !userId) {
+      return res.status(400).json({ error: 'Order ID, payment method, dan user ID diperlukan' });
+    }
+
+    const order = await getOrderByIdModel(orderId);
+    if (!order) {
+      return res.status(404).json({ error: 'Order tidak ditemukan' });
+    }
+
+    if (order.userId !== userId) {
+      return res.status(403).json({ error: 'Anda tidak memiliki izin untuk membayar order ini' });
+    }
+
+    if (order.paymentStatus === 'paid') {
+      return res.status(400).json({ error: 'Order sudah dibayar' });
+    }
+
+    // Handle payment based on method
+    if (paymentMethod === 'wallet' || paymentMethod === 'saldo') {
+      // Check wallet balance
+      const wallet = await getWalletByUserId(userId);
+      if (wallet.balance < order.total) {
+        return res.status(400).json({ error: 'Saldo tidak mencukupi' });
+      }
+
+      // Deduct wallet balance
+      await updateWalletBalance(userId, order.total, 'subtract');
+      
+      // Save transaction
+      await createTransaction({
+        userId,
+        type: 'payment',
+        amount: order.total,
+        description: `Pembayaran Order ${order.id}`,
+        orderId: order.id,
+        status: 'completed'
+      });
+    }
+
+    // Update order payment status
+    const updatedOrder = await updateOrderModel(orderId, {
+      paymentStatus: 'paid',
+      paymentMethod: paymentMethod,
+      paidAt: new Date().toISOString()
+    });
+
+    // Create notification for UMKM
+    await saveNotificationModel({
+      id: uuidv4(),
+      userId: order.umkmId,
+      type: 'order',
+      title: 'Pembayaran Diterima! 💰',
+      message: `Pembayaran order ${order.id} telah diterima - Rp ${order.total.toLocaleString('id-ID')}`,
+      orderId: order.id,
+      status: 'processing',
+      read: false,
+      createdAt: new Date().toISOString()
+    });
+
+    console.log(`✅ Pembayaran berhasil: Order ${orderId}, Method ${paymentMethod}`);
+
+    res.json({
+      success: true,
+      message: 'Pembayaran berhasil',
+      data: updatedOrder
+    });
+  } catch (error) {
+    console.error('Process payment error:', error);
+    res.status(500).json({ error: 'Terjadi kesalahan saat memproses pembayaran' });
+  }
+};
+
+// Update order status (for UMKM to update tracking)
+export const updateOrderTracking = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, trackingNumber, notes, umkmId } = req.body;
+
+    const order = await getOrderByIdModel(id);
+    if (!order) {
+      return res.status(404).json({ error: 'Order tidak ditemukan' });
+    }
+
+    // Validasi UMKM
+    if (order.umkmId !== umkmId) {
+      return res.status(403).json({ error: 'Anda tidak memiliki izin untuk mengupdate order ini' });
+    }
+
+    // Validasi status
+    const validStatuses = ['preparing', 'ready', 'pickup', 'delivered', 'completed'];
+    if (status && !validStatuses.includes(status)) {
+      return res.status(400).json({ error: `Status tidak valid. Status yang diizinkan: ${validStatuses.join(', ')}` });
+    }
+
+    const updateData = {
+      updatedAt: new Date().toISOString()
+    };
+
+    if (status) {
+      updateData.status = status;
+      
+      // Generate tracking number when status changes to ready
+      if (status === 'ready' && !order.trackingNumber) {
+        updateData.trackingNumber = `TRK-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+      }
+    }
+
+    if (trackingNumber) {
+      updateData.trackingNumber = trackingNumber;
+    }
+
+    if (notes) {
+      updateData.notes = notes;
+    }
+
+    const updatedOrder = await updateOrderModel(id, updateData);
+
+    // Create notification for user
+    if (status) {
+      const statusMessages = {
+        'preparing': 'Pesanan Diterima',
+        'ready': 'Pesanan Diproses UMKM',
+        'pickup': 'Pesanan Dikemas',
+        'delivered': 'Pesanan Dikirim',
+        'completed': 'Pesanan Selesai'
+      };
+
+      await saveNotificationModel({
+        id: uuidv4(),
+        userId: order.userId,
+        type: 'order',
+        title: `${statusMessages[status]} ✓`,
+        message: `Status pesanan ${order.id} telah diupdate`,
+        orderId: order.id,
+        status: status === 'completed' ? 'completed' : 'processing',
+        read: false,
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Status order berhasil diupdate',
+      data: updatedOrder
+    });
+  } catch (error) {
+    console.error('Update order tracking error:', error);
+    res.status(500).json({ error: 'Terjadi kesalahan saat mengupdate status order' });
+  }
+};
+
+// Update driver location
+export const updateDriverLocation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { lat, lng, driverId } = req.body;
+
+    if (!lat || !lng || !driverId) {
+      return res.status(400).json({ error: 'Latitude, longitude, dan driver ID diperlukan' });
+    }
+
+    const order = await getOrderByIdModel(id);
+    if (!order) {
+      return res.status(404).json({ error: 'Order tidak ditemukan' });
+    }
+
+    // Validasi bahwa driver yang mengupdate adalah driver yang mengambil order
+    if (order.driverId !== driverId) {
+      return res.status(403).json({ error: 'Anda tidak memiliki izin untuk mengupdate lokasi order ini' });
+    }
+
+    // Validasi bahwa order status adalah pickup atau delivered
+    if (order.status !== 'pickup' && order.status !== 'delivered') {
+      return res.status(400).json({ error: 'Lokasi driver hanya bisa diupdate saat order sedang diantar' });
+    }
+
+    const updateData = {
+      driverLocation: {
+        lat: parseFloat(lat),
+        lng: parseFloat(lng),
+        updatedAt: new Date().toISOString()
+      }
+    };
+
+    const updatedOrder = await updateOrderModel(id, updateData);
+
+    res.json({
+      success: true,
+      message: 'Lokasi driver berhasil diupdate',
+      data: updatedOrder
+    });
+  } catch (error) {
+    console.error('Update driver location error:', error);
+    res.status(500).json({ error: 'Terjadi kesalahan saat mengupdate lokasi driver' });
   }
 };
 

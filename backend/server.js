@@ -7,6 +7,9 @@ import usersRoutes from './routes/users.js';
 import uploadRoutes from './routes/upload.js';
 import ordersRoutes from './routes/orders.js';
 import notificationsRoutes from './routes/notifications.js';
+import productsRoutes from './routes/products.js';
+import cartRoutes from './routes/cart.js';
+import walletRoutes from './routes/wallet.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -25,6 +28,9 @@ app.use('/api/users', usersRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/products', productsRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/wallet', walletRoutes);
 
 // Serve uploaded files
 app.use('/uploads', express.static('uploads'));

@@ -1,0 +1,34 @@
+[
+  {
+    "id": "bd1ae610-6ff4-4e8b-bcdb-e83a7d6053b7",
+    "name": "Bogor Rain Cake",
+    "price": 100000,
+    "stock": 20,
+    "category": "Makanan",
+    "description": "ENAK BANGET",
+    "image": "http://localhost:3000/uploads/products/unknown_1763113944486_Screenshot_2025-11-11_121813.png",
+    "umkmId": "effd7fde-ffc8-4495-8b06-5b9d21aaae81",
+    "umkmName": "Bogor Raincake",
+    "sold": 0,
+    "rating": 0,
+    "status": "active",
+    "createdAt": "2025-11-14T09:52:24.548Z",
+    "updatedAt": "2025-11-14T09:52:24.548Z"
+  },
+  {
+    "id": "f0932492-2cba-4a33-b49a-075057202211",
+    "name": "Rainbow Cake",
+    "price": 20000,
+    "stock": 12,
+    "category": "Makanan",
+    "description": "MANTEP",
+    "image": "http://localhost:3000/uploads/products/unknown_1763113978537_Screenshot_2025-11-11_173441.png",
+    "umkmId": "effd7fde-ffc8-4495-8b06-5b9d21aaae81",
+    "umkmName": "Bogor Raincake",
+    "sold": 0,
+    "rating": 0,
+    "status": "active",
+    "createdAt": "2025-11-14T09:52:58.571Z",
+    "updatedAt": "2025-11-14T09:52:58.571Z"
+  }
+]
